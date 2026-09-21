@@ -1,0 +1,33 @@
+<section class="container product-page product-experience product-v17">
+ <nav class="breadcrumb" aria-label="مسیر صفحه"><a href="/" data-nav>خانه</a> / <a href="/shop" data-nav>فروشگاه</a> / $name</nav>
+ <div class="product-layout">
+  <div class="detail-gallery" data-gallery-json="$gallery_json">
+   <div class="detail-image gallery-stage">
+    <button type="button" class="gallery-zoom" data-open-lightbox aria-label="نمایش تمام‌صفحه تصویر محصول">
+     <img id="detail-main-photo" src="$image" draggable="false" alt="$name" width="800" height="1050" fetchpriority="high" decoding="async">
+     <span class="gallery-zoom-cue" aria-hidden="true">↗</span>
+    </button>
+    <span class="gallery-counter"><b id="gallery-current">$selected_index</b> / $gallery_total</span>
+   </div>
+   <div class="gallery-thumbnails" role="group" aria-label="تصاویر محصول">$gallery_thumbs</div>
+   <div class="gallery-caption"><span>DELISA / THE DETAILS</span><span>برای بزرگ‌نمایی روی عکس بزنید</span></div>
+  </div>
+  <div class="detail-info">
+   <p class="eyebrow ink">$category / DELISA</p>
+   <h1>$name</h1>
+   <div class="detail-price-block"><div class="detail-price">$price</div>$old_price $sale_badge</div>
+   <span class="detail-brand-note">ATELIER / PRODUCT DETAILS</span>
+   <div class="hairline"></div>
+   <div class="detail-intro"><h2>درباره این محصول</h2><p class="muted detail-copy">$description</p></div>
+   $colors_html
+   <p class="stock-line"><span class="stock-dot" aria-hidden="true"></span> موجودی: $stock عدد</p>
+   <div class="purchase-controls"><label class="qty-label" for="product-qty">تعداد</label><div class="quantity-stepper"><button type="button" data-qty-step="-1" aria-label="کم کردن تعداد">−</button><input id="product-qty" type="number" min="1" max="$stock" value="1" aria-label="تعداد" inputmode="numeric"><button type="button" data-qty-step="1" aria-label="اضافه کردن تعداد">+</button></div></div>
+   <div class="purchase-row"><button class="btn" id="add-to-cart" data-product-id="$product_id" $button_disabled>$button_text <span aria-hidden="true">←</span></button><button class="fav-button" type="button" data-favorite="$product_id" aria-label="افزودن به علاقه‌مندی‌ها" title="افزودن به علاقه‌مندی‌ها">♡</button></div>
+   <div class="purchase-helper"><span aria-hidden="true">✧</span><p>رنگ و تعداد را انتخاب کن و به سبد اضافه کن.</p></div>
+   <details class="accordion"><summary>جزئیات محصول</summary><p>$description</p></details>
+   <details class="accordion"><summary>راهنمای سایز</summary><p>اطلاعات اندازه‌گیری در توضیحات هر محصول از طرف دلیسا تکمیل می‌شود.</p></details>
+   <details class="accordion"><summary>ارسال و مرجوعی</summary><p>فروشگاه فعلاً آزمایشی است؛ روش ارسال و شرایط تعویض پیش از شروع فروش واقعی اعلام می‌شود.</p></details>
+  </div>
+ </div>
+ <section class="related-section"><div class="section-heading related-heading"><div><span class="eyebrow ink">MORE TO EXPLORE</span><h2>شاید دوست داشته باشی</h2></div><a href="/shop" data-nav class="underlined">همه محصولات ←</a></div><div class="product-grid">$related_cards</div></section>
+</section>

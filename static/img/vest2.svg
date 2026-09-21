@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 875" role="img">
+<defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#d4c9bc"/><stop offset="1" stop-color="#ccc3b5"/></linearGradient>
+<linearGradient id="fabric" x2="0" y2="1"><stop stop-color="#f4efe6"/><stop offset="1" stop-color="#d7cbb9"/></linearGradient>
+<linearGradient id="navy" x2="0" y2="1"><stop stop-color="#293649"/><stop offset="1" stop-color="#111c2b"/></linearGradient>
+<filter id="shadow"><feGaussianBlur stdDeviation="27"/></filter>
+</defs><rect width="100%" height="100%" fill="url(#bg)"/><ellipse cx="345" cy="784" rx="180" ry="26" opacity=".17" filter="url(#shadow)"/>
+<circle cx="105" cy="90" r="180" fill="#fff" opacity=".16"/><rect x="24" y="24" width="652" height="827" fill="none" stroke="#fff" opacity=".33"/>
+<path d="M330 188c-36 0-58 25-59 70-2 29 16 62 57 67 42-3 58-36 58-67-1-42-23-70-56-70z" fill="#a98571"/><path d="M270 251c0-49 18-77 61-77 51 0 63 42 60 84-10-13-19-18-27-38-29 26-61 32-94 31z" fill="#292925"/><path d="M307 317v54l48 1v-58z" fill="#a98571"/>
+<path d="M278 270q-20 78-45 112" stroke="#25231f" stroke-width="26" stroke-linecap="round" fill="none" opacity=".95"/><path d="M307 348q24 28 49 0l15 19-41 55-40-55z" fill="#c6a18b"/><path d="M283 349l-68 38-37 263 86 20 15-155 10 212h114l8-211 19 155 82-22-39-264-72-36-57 47z" fill="url(#fabric)" stroke="#c3b5a3" stroke-width="2"/>
+<path d="M283 349l49 90 43-88-25-12-18 40-26-41z" fill="#ddd2c2" stroke="#baac9b" stroke-width="2"/>
+<path d="M330 439v280M252 606h48M380 608h49" stroke="#b0a18d" stroke-width="2" fill="none"/>
+<circle cx="342" cy="479" r="3.5" fill="#a4988a"/><circle cx="342" cy="533" r="3.5" fill="#a4988a"/><circle cx="342" cy="585" r="3.5" fill="#a4988a"/><text x="38" y="828" fill="#695e55" font-family="Georgia,serif" font-size="20" letter-spacing="5" opacity=".75">DELISA</text></svg>

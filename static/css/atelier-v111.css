@@ -1,0 +1,227 @@
+/* DELISA v1.11 — Soft Liquid Glass.
+   Deliberately sparse glass: a small sticky header and optional filter popover.
+   All other 'glass' is cheap layered color/gradients; product photography stays sharp.
+   CSS only. No textures, webfonts, canvas, scroll JS or animation dependencies. */
+:root{
+ --glass-stroke:rgba(255,255,255,.72);
+ --glass-edge:rgba(112,108,100,.17);
+ --glass-ink:#18283c;
+ --glass-shadow:0 9px 32px rgba(32,38,45,.075),0 1px 2px rgba(32,38,45,.045);
+ --glass-ease:cubic-bezier(.22,1,.36,1);
+}
+/* Deliberate light source: ivory + silver rather than neon UI or frosted product photos. */
+body{background:#faf9f6}
+.noticebar{
+ background:linear-gradient(110deg,#17253a 0%,#22354a 55%,#17253a 100%);
+ border-bottom:1px solid rgba(255,255,255,.13);
+}
+.site-header{
+ background:#faf9f6;
+ background:linear-gradient(115deg,rgba(255,255,255,.86),rgba(249,247,243,.79) 60%,rgba(255,255,255,.85));
+ border-bottom:1px solid rgba(255,255,255,.91);
+ box-shadow:0 1px 0 rgba(92,99,109,.10),0 5px 28px rgba(33,42,53,.035);
+ -webkit-backdrop-filter:blur(13px) saturate(120%);
+ backdrop-filter:blur(13px) saturate(120%);
+}
+/* The header is a single, narrow blur layer. Its children do not use backdrop blur. */
+.site-header .brand{letter-spacing:5.2px}
+.site-header .desktop-nav a{
+ position:relative;padding:9px 0;
+ transition:color .19s ease;
+}
+.site-header .desktop-nav a:after{
+ content:"";position:absolute;bottom:3px;right:0;width:100%;height:1px;
+ background:#b5a38c;transform:scaleX(0);transform-origin:right;
+ transition:transform .24s var(--glass-ease);
+}
+.site-header .desktop-nav a:hover:after,.site-header .desktop-nav a[aria-current="page"]:after{transform:scaleX(1)}
+.site-header .icon-button,.site-header .user-link{
+ min-width:36px;min-height:36px;display:inline-grid;place-items:center;
+ border:1px solid transparent;border-radius:12px;
+ transition:background .19s ease,border-color .19s ease,color .19s ease,transform .23s var(--glass-ease);
+}
+@media(hover:hover) and (pointer:fine){
+ .site-header .icon-button:hover,.site-header .user-link:hover{
+ background:rgba(255,255,255,.70);border-color:rgba(167,157,144,.29);
+ transform:translateY(-1px);box-shadow:inset 0 1px 0 rgba(255,255,255,.90);
+ }
+}
+.cart-count{box-shadow:0 1px 0 rgba(255,255,255,.86),0 2px 7px rgba(22,35,53,.14)}
+/* One visual language for controls. Keep buttons crisp; don't blur text behind them. */
+.btn,.search-submit,.shop-filter-details>summary,.shop-cat-chip,.color-option,
+.quantity-stepper,.checkout-coupon,.search-suggestions a,.pagination a{
+ transition-property:background-color,border-color,color,box-shadow,transform;
+ transition-duration:190ms;
+ transition-timing-function:var(--glass-ease);
+}
+.btn{border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.14)}
+.btn.outline,.btn.light{box-shadow:inset 0 1px 0 rgba(255,255,255,.82)}
+.btn:focus-visible,.site-header button:focus-visible,.site-header a:focus-visible,
+.shop-cat-chip:focus-visible,.shop-filter-details>summary:focus-visible,
+.search-submit:focus-visible,.gallery-zoom:focus-visible{
+ outline:2px solid #8f785e;outline-offset:3px;
+}
+/* Product tiles: preserve photography. Only the thin badge/hover label is translucent. */
+.atelier-card-image{background:#ebe8e2}
+.atelier-card-image img{transition:transform .39s var(--glass-ease)}
+.card-discover{
+ background:linear-gradient(130deg,rgba(255,255,255,.96),rgba(251,249,244,.93));
+ border:1px solid rgba(255,255,255,.86);
+ border-radius:5px;
+ box-shadow:0 5px 19px rgba(20,31,48,.095),inset 0 1px 0 rgba(255,255,255,.96);
+ -webkit-backdrop-filter:none;backdrop-filter:none;
+}
+.sale-badge{
+ border-radius:5px;
+ background:linear-gradient(135deg,#19283e,#32455a);
+ border:1px solid rgba(255,255,255,.33);
+ box-shadow:0 3px 11px rgba(22,37,54,.14),inset 0 1px 0 rgba(255,255,255,.18);
+}
+.atelier-card-image .sold-out{border-radius:5px;background:rgba(255,254,251,.95)}
+.atelier-card-info{padding-top:15px}
+.atelier-card-info a.card-name{letter-spacing:-.14px}
+.card-details-link{transition:color .2s ease,opacity .2s ease,border-color .2s ease}
+/* Shop masthead: reflective geometry made of gradients, no extra images or blur. */
+.shop-v110 .shop-hero{
+ background:linear-gradient(112deg,#f3f0eb 0%,#f5f2ed 47%,#eae5dd 100%);
+ border:1px solid rgba(211,204,195,.54);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.89);
+}
+.shop-v110 .shop-hero:after{
+ width:340px;height:340px;bottom:-170px;left:23%;
+ border:1px solid rgba(255,255,255,.54);box-shadow:0 0 0 34px rgba(255,255,255,.09);
+}
+.shop-v110 .shop-hero-copy{z-index:2}
+.shop-v110 .shop-hero-copy h1{letter-spacing:-.6px}
+.shop-v110 .shop-hero-copy h1 em{color:#79664e}
+.shop-v110 .shop-hero-panel{
+ background:radial-gradient(ellipse at 16% 14%,rgba(255,255,255,.88),transparent 46%),
+ linear-gradient(142deg,#e1e8e6 0%,#d4dcd9 25%,#e9e8e1 58%,#d4cdc0 100%);
+ color:#6a6c67;
+}
+.shop-v110 .shop-hero-panel:before{
+ top:-62px;right:-155px;width:450px;height:450px;
+ border:1px solid rgba(255,255,255,.70);
+ box-shadow:0 0 0 30px rgba(255,255,255,.09),0 0 0 69px rgba(255,255,255,.045);
+}
+.shop-v110 .shop-hero-panel:after{border:1px solid rgba(255,255,255,.68)}
+.shop-v110 .shop-hero-monogram{
+ color:rgba(25,44,55,.34);
+ text-shadow:1px 1px rgba(255,255,255,.68),-1px -1px rgba(22,42,49,.07);
+}
+.shop-v110 .shop-hero-monogram span{color:#ad9e88}
+.shop-v110 .shop-hero-panel>span:not(.shop-hero-monogram){
+ position:relative;z-index:1;
+ background:rgba(255,255,255,.29);
+ border:1px solid rgba(255,255,255,.52);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.55);
+ border-radius:999px;padding:7px 11px;
+}
+.shop-v110 .shop-hero-link{transition:gap .23s var(--glass-ease),color .2s ease}
+/* Liquid-ish chips from reflected edges, not expensive per-chip backdrop blur. */
+.shop-v110 .shop-cat-chip{
+ border-radius:999px;
+ background:linear-gradient(135deg,rgba(255,255,255,.87),rgba(244,242,238,.70));
+ border:1px solid rgba(197,194,187,.70);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.96),0 2px 7px rgba(28,44,58,.022);
+ color:#535f63;padding-inline:18px;
+}
+.shop-v110 .shop-cat-chip:hover{
+ background:#fff;border-color:#ad9c87;
+ box-shadow:inset 0 1px 0 #fff,0 5px 14px rgba(23,39,56,.065);
+ transform:translateY(-1px);
+}
+.shop-v110 .shop-cat-chip.active,.shop-v110 .shop-cat-chip[aria-current=page]{
+ color:#fff;background:linear-gradient(125deg,#1b293d,#34485a);
+ border-color:#26384d;box-shadow:inset 0 1px 0 rgba(255,255,255,.17),0 5px 13px rgba(29,48,64,.13);
+}
+.shop-v110 .shop-cat-chip.active span{color:#e9dccb}
+.shop-v110 .shop-filter-details>summary{
+ border-radius:999px;
+ background:linear-gradient(130deg,rgba(255,255,255,.95),rgba(242,240,236,.82));
+ border:1px solid rgba(196,190,181,.76);
+ box-shadow:inset 0 1px 0 #fff,0 4px 12px rgba(30,43,54,.045);
+ padding-inline:19px;
+}
+.shop-v110 .shop-filter-details[open]>summary,.shop-v110 .shop-filter-details>summary:hover{
+ background:#fff;border-color:#a99b88;box-shadow:inset 0 1px 0 #fff,0 5px 15px rgba(24,35,49,.09);
+}
+.shop-v110 .shop-filter-details .filters{
+ background:rgba(253,251,247,.98);
+ border:1px solid rgba(255,255,255,.95);
+ border-radius:12px;
+ box-shadow:0 15px 45px rgba(20,35,48,.105),inset 0 1px 0 rgba(255,255,255,.98);
+}
+.shop-v110 .shop-filter-details .filters input,.shop-v110 .shop-filter-details .filters select,
+.search-v18 .search-form-v18 input{border-radius:4px}
+.shop-v110 .shop-applied-filters a{border-radius:999px;border:1px solid rgba(208,197,182,.5)}
+.shop-v110 .pagination a{border-radius:50%;background:rgba(255,255,255,.72)}
+.shop-v110 .pagination a.active{background:#1c2b40;color:#fff}
+/* Search: glass-like highlights around a fully opaque, very cheap search sheet. */
+.search-v18{background:#faf9f6;box-shadow:0 20px 50px rgba(19,30,43,.16)}
+.search-v18 .search-form-v18{
+ background:linear-gradient(120deg,#fff,#fcfaf7);
+ border:1px solid #c9c3b9;border-radius:10px;
+ box-shadow:0 5px 26px rgba(35,45,57,.045),inset 0 1px 0 #fff;
+}
+.search-v18 .search-form-v18:focus-within{
+ border-color:#8c816f;box-shadow:0 8px 27px rgba(24,37,53,.07),0 0 0 3px rgba(153,136,109,.105);
+}
+.search-v18 .search-submit{border:0;border-radius:6px;background:linear-gradient(135deg,#1b2a3d,#30445a)}
+.search-v18 .search-suggestions a{
+ border-radius:999px;background:linear-gradient(135deg,#fff,#f6f3ee);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.98);
+}
+.search-v18 .search-suggestions a:hover{background:#fff;border-color:#aa9b88}
+.search-v18 .search-item{border-radius:6px}
+/* Cart + product controls: subtle raised surfaces, not full-screen filter blur. */
+.drawer{background:#faf9f7;box-shadow:10px 0 50px rgba(16,28,44,.16)}
+.drawer-top,.drawer-foot{background:linear-gradient(115deg,#fff,#faf8f4);border-color:rgba(196,189,179,.65)}
+.backdrop{background:rgba(14,23,36,.43)}
+.gallery-stage .gallery-zoom-cue,.gallery-stage .gallery-counter{
+ background:rgba(255,254,250,.91);border:1px solid rgba(255,255,255,.90);
+ border-radius:7px;box-shadow:0 4px 15px rgba(26,35,46,.08),inset 0 1px 0 rgba(255,255,255,.93);
+}
+.gallery-thumb{border-radius:4px}
+.color-option{border-radius:6px;background:linear-gradient(135deg,rgba(255,255,255,.78),rgba(247,245,241,.7))}
+.color-option.is-selected{background:#f1eee8}
+.quantity-stepper,.purchase-helper,.checkout-coupon{
+ border-radius:7px;background:linear-gradient(140deg,#fffefa,#f7f4ef);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.96);
+}
+.lb-control{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.36);transition:background .18s ease,transform .22s var(--glass-ease)}
+.lb-control:hover{background:rgba(255,255,255,.22)}
+/* Keep account and admin interfaces functional instead of transparent. */
+.auth-card,.account-section,.checkout-grid>.panel,.order-detail-grid .panel,
+.admin-wrap .panel,.admin-wrap .stat{
+ border-color:rgba(210,203,194,.82);
+ box-shadow:0 8px 28px rgba(30,40,55,.038),inset 0 1px 0 rgba(255,255,255,.77);
+}
+.auth-card{background:#fffefc}
+/* Performance/device/accessibility: drop backdrop filtering on smaller screens. */
+@media(max-width:700px){
+ .site-header{-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px)}
+ .site-header .icon-button,.site-header .user-link{min-width:33px;min-height:35px}
+ .shop-v110 .shop-hero:after{width:190px;height:190px;bottom:-85px;left:-35px}
+ .shop-v110 .shop-hero-copy h1{letter-spacing:-.2px}
+ .shop-v110 .shop-cat-chip{padding-inline:14px}
+ .shop-v110 .shop-filter-details .filters{
+  -webkit-backdrop-filter:none;backdrop-filter:none;background:#fdfbf8;
+  border-color:#e4ddd2;box-shadow:0 11px 30px rgba(21,35,51,.13);
+ }
+ .atelier-card-info{padding-top:11px}
+ .card-discover{display:none}
+}
+@media(hover:none){.shop-v110 .shop-cat-chip:hover{transform:none}}
+@media(prefers-reduced-transparency:reduce){
+ .site-header{background:#faf9f6;-webkit-backdrop-filter:none;backdrop-filter:none}
+ .shop-v110 .shop-filter-details .filters{background:#fdfbf8}
+}
+@media(prefers-reduced-motion:reduce){
+ .site-header .desktop-nav a:after,.site-header .icon-button,.site-header .user-link,
+ .shop-v110 .shop-cat-chip,.shop-v110 .shop-filter-details>summary,
+ .shop-v110 .shop-hero-link,.card-discover,.atelier-card-image img{transition:none!important}
+}
+@media(forced-colors:active){
+ .site-header,.shop-v110 .shop-filter-details .filters,.shop-v110 .shop-cat-chip,.shop-v110 .shop-hero{border:1px solid CanvasText;background:Canvas;color:CanvasText;box-shadow:none}
+}

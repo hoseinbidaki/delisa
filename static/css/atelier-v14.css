@@ -1,0 +1,203 @@
+/* DELISA ATELIER — v1.4 | typography-first fashion storefront
+   No JS, animation libraries, or font binaries are bundled with this layer. */
+:root{
+  --navy:#1d2b3f;--ink:#22272b;--bone:#f3eee6;--paper:#fbfaf7;
+  --line:#e7e2d9;--muted:#74716b;--white:#fff;
+  --accent:#927b60;--soft:#f7f4ee;--header:78px;
+  --fa:'Vazirmatn','Noto Sans Arabic UI','Noto Sans Arabic',-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,sans-serif;
+}
+html{scroll-padding-top:calc(var(--header) + 18px);text-size-adjust:100%;-webkit-text-size-adjust:100%}
+body{background:var(--paper);font-family:var(--fa);font-weight:400;font-size:14px;line-height:1.9;color:var(--ink);letter-spacing:0}
+button,input,select,textarea{font-family:var(--fa);letter-spacing:0}
+input,textarea,select{font-size:14px;line-height:1.65;min-height:46px;border-color:#ded9d0;background:#fdfcfa;transition:border-color .15s,background .15s;outline-offset:3px}
+input::placeholder,textarea::placeholder{color:#908a82}
+input:focus,select:focus,textarea:focus{background:#fff;border-color:#7c796f;box-shadow:0 0 0 3px #1d2b3f0c}
+label{font-size:13px;font-weight:500;color:#454748}
+h1,h2,h3{color:var(--navy);font-family:var(--fa);font-weight:500;letter-spacing:0;line-height:1.65}
+p{line-height:2.05}
+::selection{background:#ddd0c0;color:#1d2b3f}
+:focus-visible{outline:2px solid #927b60;outline-offset:4px}
+.skip-link{position:fixed;z-index:999;top:-100px;right:20px;background:var(--navy);color:#fff;padding:9px 18px;font-size:13px}
+.skip-link:focus{top:16px}
+.container{max-width:1320px;width:calc(100% - 9vw)}
+.muted{color:var(--muted)}.tiny{font-size:12px}
+.eyebrow{font-family:Georgia,'Times New Roman',serif;font-size:10px;letter-spacing:2.2px;color:#867b6b}
+.btn{min-height:49px;padding:11px 25px;border-radius:2px;gap:14px;font-size:13px;font-weight:500;line-height:1.8;transition:background .17s,color .17s,border-color .17s}
+.btn:hover{background:#30435b}
+.underlined,.small-link{font-size:13px;font-weight:500;line-height:1.8;text-underline-offset:6px;transition:color .17s}
+.underlined:hover,.small-link:hover{color:var(--accent)}
+.noticebar{height:30px;font-size:11px;background:#1e2b3b;gap:13px;color:#fbf8f3}
+.noticebar span{opacity:.96}.noticebar .notice-divider{font-size:12px;color:#c6b99f}
+.site-header{background:rgba(251,250,247,.98);border-color:#ebe8e2;box-shadow:0 2px 12px rgba(20,29,43,.025);padding-inline:4.5vw}
+.desktop-nav{gap:31px;font-size:13px;font-weight:500}
+.desktop-nav a{position:relative;padding:9px 0}
+.desktop-nav a:after{content:'';position:absolute;bottom:3px;right:0;left:0;transform:scaleX(0);height:1px;background:var(--accent);transition:transform .18s}
+.desktop-nav a:hover:after,.desktop-nav a[aria-current=page]:after{transform:scaleX(1)}
+.brand{font-size:29px;letter-spacing:4.2px;font-family:Georgia,'Times New Roman',serif;font-weight:400}
+.brand small{font-size:8px;letter-spacing:3.8px;padding-top:7px}
+.header-side{gap:18px}.header-left{gap:13px}
+.icon-button,.user-link{min-height:37px;min-width:37px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;transition:background .15s,opacity .15s}
+.icon-button:hover,.user-link:hover{opacity:1;background:#eae4d9}
+.icon-button svg,.user-link svg{width:20px;height:20px}
+.cart-count{font-family:var(--fa);font-size:10px}
+/* The hero has typographic hierarchy instead of decorative giant watermark. */
+.hero.hero-editorial{height:clamp(620px,79vh,850px);min-height:600px;grid-template-columns:45% 55%;background:#f4f0e9}
+.hero-editorial .hero-copy{padding-right:clamp(32px,6.2vw,100px);padding-left:clamp(20px,3vw,46px);align-items:flex-start;justify-content:center}
+.hero-editorial .hero-copy .eyebrow{color:#8b806e}
+.hero-marker{margin-top:31px;font-size:10px;color:var(--accent)}
+.hero-editorial .hero-copy h1{font-family:var(--fa);font-size:clamp(46px,4.55vw,73px);font-weight:500;line-height:1.6;letter-spacing:-.8px;margin:21px 0 14px}
+.hero-period{color:var(--accent)}
+.hero-editorial .hero-copy>p:not(.eyebrow){font-size:15px;line-height:2.3;max-width:350px;margin-bottom:28px;color:#5f605d}
+.hero-cta{min-width:178px}
+.hero-caption{font-size:10px;color:#968c7e;letter-spacing:1.9px}
+.hero-frame{background:#e1dbd1}
+.hero-frame:before{background:linear-gradient(0deg,#18243a33,transparent 22%)}
+.hero-frame-label{font-size:11px;color:#fff;letter-spacing:2px}
+.hero-bottom-line{color:#887f74;font-size:10px;letter-spacing:1.6px}
+.brand-values{height:74px;background:#fffefa;font-size:12px;color:#5f5e5b;gap:clamp(20px,5vw,82px)}
+.brand-values i{background:#b6a897}
+/* Catalog: large imagery, readable titles/prices and consistent spacing. */
+.section{padding-top:90px;padding-bottom:96px}
+.section-heading{margin-bottom:31px}
+.section-heading h1,.section-heading h2{font-weight:500;letter-spacing:0;font-size:clamp(29px,2.65vw,40px);line-height:1.5;margin:8px 0 2px}
+.section-lead{font-size:13px;color:var(--muted);line-height:2.05;margin:4px 0 0}
+.product-grid{gap:clamp(14px,1.65vw,26px)}
+.product-image{aspect-ratio:4/5.1;background:#ece8e1;isolation:isolate}
+.product-image img{transition:transform .28s ease;object-position:center}
+.product-card:hover .product-image img{transform:scale(1.018)}
+.product-image:after{font-size:12px;bottom:12px;left:12px;right:12px;padding:10px 12px;transform:translateY(4px);background:#fbfaf7f2}
+.product-info{padding:13px 1px 6px;gap:4px}
+.product-info>a{font-weight:500;font-size:14px;line-height:1.75;color:#2d3235}
+.product-info>span{font-size:13px;font-weight:400;color:#615f5b}
+.sold-out{font-size:11px;padding:6px 11px}
+/* Editorial: no enormous decorative English text; Persian brand voice. */
+.editorial{min-height:570px;grid-template-columns:1fr 1fr;background:#f0ece6}
+.editorial-art img{min-height:570px}
+.editorial-text{padding:7vw 7.5vw 7vw 5vw}
+.editorial-text h2.editorial-heading-fa{font-family:var(--fa);font-size:clamp(40px,4.2vw,63px);line-height:1.8;font-weight:500;letter-spacing:-.5px;direction:rtl;text-align:right;margin:23px 0 21px}
+.editorial-rule{width:45px;background:#a9957d;margin-bottom:25px}
+.editorial-text>p:not(.eyebrow){font-size:14px;max-width:360px;line-height:2.35;margin-bottom:26px}
+.category-grid{gap:18px}
+.category{aspect-ratio:1.06/1;max-height:520px;border:1px solid #e9e4dc}
+.category:after{background:linear-gradient(0deg,rgba(15,24,36,.62),transparent 44%)}
+.category img{transition:transform .28s ease}
+.category:hover img{transform:scale(1.015)}
+.category>span{font-weight:500;font-size:30px;line-height:1.65}
+.category small{font-size:10px;font-weight:400}
+.category b{font-size:12px;font-weight:500;margin-top:11px}
+.story{background:#f5f2ec;padding:90px 20px}
+.story h2{font:400 52px/1.3 Georgia,serif;letter-spacing:7px}
+.story p{font-size:14px;max-width:560px;line-height:2.5;color:#5b5c5a}
+.footer{padding-top:62px;background:#1d2b3f}
+.footer-grid strong{font-size:14px;font-weight:500}
+.footer-grid a:not(.brand){font-size:12px;line-height:1.9}
+.footer-grid p{font-size:12px}
+.footer-bottom{font-family:Georgia,serif}
+.footer-bottom span{font-family:var(--fa);font-size:11px}
+/* Shop and product detail look like the same brand rather than a different admin template. */
+.breadcrumb{font-size:12px;color:#878179;margin:28px 0}
+.shop-intro{padding:35px 0 55px;margin-bottom:25px}
+.shop-intro h1{font-size:clamp(34px,4vw,55px);font-weight:500;letter-spacing:0;line-height:1.55;margin:14px 0 8px}
+.shop-intro p:last-of-type{font-size:14px}
+.filters{border-color:#e9e4da;padding:21px;gap:17px;background:#fffefa}
+.filters label{font-size:13px}
+.filters input,.filters select{background:#fff;font-size:13px}
+.shop-count{font-size:12px;padding:20px 0}
+.pagination a{font-size:13px;min-height:38px;min-width:38px;display:inline-grid;place-items:center}
+.detail-info{padding-top:32px;max-width:490px}
+.detail-info h1{font-size:clamp(30px,3vw,43px);font-weight:500;line-height:1.55;margin:12px 0}
+.detail-price{font-size:19px;font-weight:500}
+.detail-brand-note{font-size:10px;letter-spacing:1.4px}
+.detail-copy{font-size:14px;line-height:2.3}
+.stock-line{font-size:12px}
+.qty-label{font-size:13px}
+.accordion{font-size:13px;padding-block:17px}
+.accordion summary{font-weight:500}
+.accordion p{font-size:13px;line-height:2.2}
+.detail-image>span{font-size:10px;letter-spacing:1.3px}
+.reviews h2,.reviews h3{font-weight:500}
+.review p{font-size:13px}
+/* Auth, account and admin are functional areas, but share the storefront typography. */
+.auth-wrap{background:#f5f2ec;padding:75px 18px}
+.auth-card{border-color:#e9e4db;box-shadow:0 8px 42px rgba(29,43,63,.035);padding:46px}
+.auth-card h1{font-weight:500;font-size:30px}
+.auth-card>p,.auth-extra{font-size:13px}
+.form label{font-size:13px}
+.admin-nav a{font-size:13px}
+.panel,.stat,.order-card{border-color:var(--line);box-shadow:none}
+.admin-head h1{font-size:clamp(26px,3vw,38px)}
+.stat strong{font-weight:500}
+.footer-grid a:focus-visible,.desktop-nav a:focus-visible{outline-offset:4px}
+/* Smoothness: avoid animating whole pages, layout or heavy filters on every click. */
+main.page-enter,#page-root.page-enter{animation:atelier-appear .13s ease-out}
+@keyframes atelier-appear{from{opacity:.91}to{opacity:1}}
+html.delisa-loading .site-header:after{background:#a68e71}
+.icon-button,.category img,.product-image img{will-change:auto}
+@media(max-width:1050px){
+ .hero-editorial .hero-copy h1{font-size:clamp(39px,5vw,60px)}
+ .hero-editorial .hero-copy{padding-right:5.2vw}
+ .editorial-text{padding:5vw}
+}
+@media(max-width:700px){
+ :root{--header:64px}
+ body{font-size:14px}
+ .container{width:calc(100% - 36px)}
+ .noticebar{height:28px;font-size:10px;padding-inline:8px;text-align:center}
+ .site-header{padding:0 14px}
+ .brand{font-size:26px;letter-spacing:3.3px}
+ .brand small{font-size:7px}
+ .icon-button{min-width:36px;min-height:36px}
+ .hero.hero-editorial{min-height:0;height:auto;grid-template-columns:1fr;grid-template-rows:auto auto}
+ .hero-frame{height:clamp(315px,55vh,480px)}
+ .hero-editorial .hero-copy{min-height:340px;padding:31px 25px 45px;align-items:flex-start}
+ .hero-marker{margin-top:12px}
+ .hero-editorial .hero-copy h1{font-size:clamp(34px,9vw,48px);line-height:1.7;margin:9px 0 8px;letter-spacing:0}
+ .hero-editorial .hero-copy>p:not(.eyebrow){font-size:13px;line-height:2.2;max-width:400px;margin-bottom:19px}
+ .hero-cta{min-width:175px;min-height:46px}
+ .hero-bottom-line{font-size:8px}
+ .hero-frame-label{font-size:9px;bottom:17px;left:16px}
+ .brand-values{height:auto;min-height:65px;gap:13px;padding:16px 12px;font-size:11px}
+ .brand-values span{white-space:normal;text-align:center;line-height:1.7}
+ .brand-values i{flex:0 0 3px}
+ .section{padding-top:66px;padding-bottom:71px}
+ .section-heading{margin-bottom:22px}
+ .section-heading h1,.section-heading h2{font-size:27px;line-height:1.5}
+ .section-lead{font-size:12px;line-height:1.9}
+ .section-heading .underlined{font-size:12px;white-space:nowrap}
+ .product-grid{gap:12px}
+ .product-info{padding:10px 1px 5px;gap:3px}
+ .product-info>a{font-size:13px;line-height:1.7}
+ .product-info>span{font-size:12px}
+ .editorial{grid-template-columns:1fr;min-height:0}
+ .editorial-art img{min-height:0;height:390px}
+ .editorial-text{padding:37px 27px 47px}
+ .editorial-text h2.editorial-heading-fa{font-size:clamp(34px,8vw,49px);line-height:1.8;margin:16px 0 10px}
+ .editorial-text>p:not(.eyebrow){font-size:13px;line-height:2.3}
+ .home-categories{padding-block:68px}
+ .category-grid{gap:12px}
+ .category{aspect-ratio:1.17/1}
+ .category>span{font-size:28px;right:23px;bottom:23px}
+ .story{padding:73px 23px}
+ .story h2{font-size:45px}
+ .story p{font-size:13px}
+ .footer{padding-top:48px}
+ .footer-grid strong{font-size:13px}
+ .footer-grid a:not(.brand){font-size:12px}
+ .footer-bottom span{font-size:10px}
+ .shop-intro{padding-top:24px;padding-bottom:46px}
+ .shop-intro h1{font-size:35px}
+ .filters{padding:15px;gap:12px}
+ .detail-info{padding-top:22px}
+ .detail-info h1{font-size:29px}
+ .detail-price{font-size:17px}
+ .auth-wrap{padding:45px 15px}
+ .auth-card{padding:31px 23px}
+ .admin-nav a{font-size:12px}
+}
+@media(max-width:370px){
+ .hero-editorial .hero-copy h1{font-size:33px}
+ .brand-values{font-size:10px}
+ .product-info>a{font-size:12px}
+ .product-info>span{font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){main.page-enter,#page-root.page-enter{animation:none!important}}

@@ -1,0 +1,7 @@
+# Optional environment variables. Not loaded automatically from this file.
+# Use shell export, an environment manager, or hosting control panel.
+# Example on macOS/Linux:
+# export DELISA_DATA_DIR=/secure/path/delisa-data
+# export DELISA_SECURE_COOKIE=1  # only with HTTPS
+DELISA_DATA_DIR=./data
+DELISA_SECURE_COOKIE=0

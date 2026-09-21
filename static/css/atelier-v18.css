@@ -1,0 +1,66 @@
+/* DELISA v1.8 — image interaction and editorial search. No UI libraries. */
+/* Restrict native drag/selection ONLY to public product photography. */
+[data-card-zoom] img,.detail-gallery img,.delisa-lightbox img,.search-item img{
+ -webkit-user-drag:none;user-drag:none;-webkit-user-select:none;user-select:none;
+ -webkit-touch-callout:none;
+}
+button.card-photo-zoom{border:0;border-radius:0;margin:0;padding:0;width:100%;text-align:inherit;cursor:zoom-in;color:inherit;font:inherit}
+button.card-photo-zoom .card-discover{pointer-events:none}
+.card-details-link{display:inline-flex;gap:7px;align-items:center;margin-top:9px;color:#233147;font-size:11px;border-bottom:1px solid #cfc4b5;padding-bottom:4px;transition:border-color .18s}
+.card-details-link:hover{border-color:#18263c}
+.card-photo-zoom:focus-visible{outline:2px solid #172338;outline-offset:3px}
+.delisa-lightbox.single-photo .lb-prev,.delisa-lightbox.single-photo .lb-next{visibility:hidden;pointer-events:none}
+/* Search overlay: rich whitespace rather than big assets or animation libraries. */
+.search-v18{max-height:100dvh;overflow-y:auto;background:#fbfaf7;box-shadow:0 24px 70px #0b17232b}
+.search-v18 .search-inner{max-width:950px;padding:27px 34px 38px}
+.search-v18 .search-topline,.search-v18 .search-bottom{display:flex;align-items:center;justify-content:space-between;gap:20px;font:10px/1.8 Georgia,serif;letter-spacing:2px;color:#999087;direction:ltr}
+.search-v18 .search-close{display:inline-flex;gap:9px;align-items:center;background:transparent;border:1px solid #ddd6cb;color:#172338;padding:3px 11px;min-height:34px;font:24px/1.2 Georgia,serif;direction:ltr}
+.search-v18 .search-close small{font:11px/1.5 "Vazirmatn",Tahoma,sans-serif;letter-spacing:0}
+.search-v18 .search-title{display:flex;justify-content:space-between;gap:24px;align-items:center;margin:25px 0 29px}
+.search-v18 .search-eyebrow{font:11px/1.5 Georgia,serif;letter-spacing:2px;color:#aa9073;margin:0 0 9px}
+.search-v18 .search-title h2{font-size:clamp(24px,3vw,35px);line-height:1.65;color:#172338;font-weight:500;margin:0 0 5px}
+.search-v18 .search-title p:last-child{font-size:12px;color:#817870;margin:0}
+.search-v18 .search-ornament{font:normal clamp(55px,8vw,100px)/1 Georgia,serif;letter-spacing:-7px;color:#eae4da;direction:ltr}
+.search-v18 .search-form-v18{display:grid;grid-template-columns:23px minmax(0,1fr) auto;gap:16px;align-items:center;border:1px solid #cfc8be;background:#fff;padding:10px 12px 10px 10px;transition:border-color .18s,box-shadow .18s;margin:0}
+.search-v18 .search-form-v18:focus-within{border-color:#172338;box-shadow:0 0 0 3px #1723380c}
+.search-v18 .search-form-v18 svg{width:22px;height:22px;fill:none;stroke:#384252;stroke-width:1.4;stroke-linecap:round}
+.search-v18 .search-form-v18 input{width:100%;border:0;box-shadow:none;background:transparent;padding:8px 0;font-size:15px;font-weight:400;outline:0;min-width:0}
+.search-v18 .search-form-v18 input:focus{border:0}
+.search-v18 .search-form-v18 input::placeholder{color:#a29b93;opacity:1}
+.search-v18 .search-submit{background:#172338;color:#fff;min-height:44px;padding:8px 20px;display:flex;gap:17px;align-items:center;justify-content:center;font-size:12px;transition:background .18s;white-space:nowrap}
+.search-v18 .search-submit:hover{background:#2c3b51}
+.search-v18 .search-suggestions{padding:23px 0 24px}
+.search-v18 .search-suggestions>span,.search-v18 .search-live-heading>span{font-size:11px;color:#6e675e}
+.search-v18 .search-suggestions>div{display:flex;flex-wrap:wrap;gap:9px;margin-top:15px}
+.search-v18 .search-suggestions a{display:inline-flex;gap:18px;align-items:center;justify-content:space-between;border:1px solid #e3dbd0;padding:7px 15px;background:#f6f2ec;color:#253146;font-size:12px;min-height:39px;transition:background .18s,border-color .18s}
+.search-v18 .search-suggestions a:hover{background:#ede7dc;border-color:#bbb0a0}
+.search-v18 .search-suggestions a span{font:13px Georgia,serif;color:#9f8c75}
+.search-v18 .search-live-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid #e3dcd1;margin-top:19px;padding-bottom:11px}
+.search-v18 .search-live-heading small{font-size:10px;color:#a39a90}
+.search-v18 .search-results-v18{display:grid;grid-template-columns:1fr 1fr;gap:0 18px;max-height:min(40vh,340px);overflow:auto;overscroll-behavior:contain}
+.search-v18 .search-item{min-width:0;display:grid;grid-template-columns:56px minmax(0,1fr);grid-template-rows:auto auto;gap:0 13px;align-items:center;padding:12px 6px;border-bottom:1px solid #ede6dc;transition:background .16s}
+.search-v18 .search-item:hover{background:#f5f1ea}
+.search-v18 .search-item img{grid-row:1/3;grid-column:1;width:56px;height:74px;object-fit:cover;background:#ede7dd}
+.search-v18 .search-result-copy{display:flex;flex-direction:column;gap:1px;grid-column:2;grid-row:1;font-size:12px;min-width:0}
+.search-v18 .search-result-copy b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.search-v18 .search-result-copy small{font-size:10px;color:#857668}
+.search-v18 .search-item strong{grid-column:2;grid-row:2;margin:0;color:#1a2a40;font-size:11px;font-weight:500;align-self:start}
+.search-v18 .search-message{grid-column:1/-1;color:#756f69;font-size:12px;padding:19px 4px}
+.search-v18 [hidden]{display:none!important}
+.search-v18 .search-bottom{border-top:1px solid #e5ded2;padding-top:14px;margin-top:16px}
+@media(max-width:650px){
+ .search-v18 .search-inner{padding:16px 18px 23px}
+ .search-v18 .search-topline{font-size:9px}
+ .search-v18 .search-title{margin:17px 0 21px}
+ .search-v18 .search-title h2{font-size:25px}
+ .search-v18 .search-ornament{font-size:55px;letter-spacing:-4px}
+ .search-v18 .search-form-v18{gap:10px;padding:7px 8px}
+ .search-v18 .search-form-v18 input{font-size:13px}
+ .search-v18 .search-submit{min-height:40px;padding:8px 12px;gap:6px;font-size:11px}
+ .search-v18 .search-results-v18{grid-template-columns:1fr;max-height:min(42vh,360px)}
+ .search-v18 .search-title p:last-child{font-size:11px}
+ .search-v18 .search-suggestions>div{gap:7px}
+ .search-v18 .search-suggestions a{padding:7px 12px;font-size:11px}
+ .search-v18 .search-bottom{font-size:8px}
+}
+@media(prefers-reduced-motion:reduce){.search-v18 .search-form-v18,.search-v18 .search-item,.search-v18 .search-submit,.card-details-link{transition:none}}

@@ -1,0 +1,32 @@
+<section class="container shop-page shop-experience shop-v110" aria-labelledby="shop-heading">
+ <nav class="breadcrumb shop-breadcrumb" aria-label="مسیر صفحه"><a href="/" data-nav>خانه</a><span aria-hidden="true">/</span><span>فروشگاه</span></nav>
+ <header class="shop-hero">
+  <div class="shop-hero-copy">
+   <span class="shop-kicker">THE DELISA EDIT <i aria-hidden="true"></i> COLLECTION / 01</span>
+   <h1 id="shop-heading">انتخاب‌هایی برای<br><em>سبکِ خودت.</em></h1>
+   <p>از جزئیات ساده تا استایل‌های به‌یادماندنی؛ لباس‌هایی که هر روز با تو همراه می‌شن.</p>
+   <a class="shop-hero-link" href="#shop-list">کشف محصولات <span aria-hidden="true">↙</span></a>
+  </div>
+  <div class="shop-hero-panel" aria-hidden="true"><span class="shop-hero-monogram">D<span>.</span></span><span>DESIGNED FOR YOUR EVERYDAY</span><span>DELISA / ATELIER</span></div>
+ </header>
+ <div class="shop-categories" aria-label="دسته‌بندی محصولات">$category_chips</div>
+ <div id="shop-list" class="shop-collection">
+  <div class="shop-toolbar-head shop-modern-toolbar">
+   <div><span class="shop-kicker">CURATED FOR YOU</span><h2>$results_title</h2><span class="shop-result-count">$count محصول برای دیدن</span></div>
+   <details class="shop-filter-details" id="shop-filter-details">
+    <summary aria-label="باز کردن فیلتر و مرتب‌سازی"><span class="shop-filter-glyph" aria-hidden="true">☷</span> فیلتر و مرتب‌سازی <span class="shop-filter-plus" aria-hidden="true">+</span></summary>
+    <form action="/shop" method="get" class="filters" id="shop-filter" role="search">
+     <label>جستجوی محصول<input type="search" name="q" value="$query" placeholder="نام محصول یا مدل..." autocomplete="off"></label>
+     <label>دسته‌بندی<select name="category">$cat_options</select></label>
+     <label>مرتب‌سازی<select name="sort">$sort_options</select></label>
+     <label class="shop-sale-check"><input type="checkbox" name="sale" value="1" $sale_checked> فقط محصولات تخفیف‌دار</label>
+     <button class="btn" type="submit">نمایش محصولات <span aria-hidden="true">←</span></button>
+     <a href="/shop" data-nav class="filter-reset">پاک کردن همه</a>
+    </form>
+   </details>
+  </div>
+  $active_filters
+  <div class="product-grid shop-grid">$cards</div>
+  <nav class="pagination" aria-label="صفحات محصولات">$pagination</nav>
+ </div>
+</section>
