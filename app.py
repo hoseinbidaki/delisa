@@ -552,23 +552,47 @@ def register_page(sess,error=''):
 
 def account_page(conn,sess):
     require_user(sess)
-    orders=conn.execute('SELECT * FROM orders WHERE user_id=? ORDER BY id DESC LIMIT 100',(sess['uid'],)).fetchall()
-    cards=''.join(f'''<a class="order-card" href="/account/orders/{o['id']}" data-nav><strong>سفارش #{o['id']}</strong><span>{esc(o['created_at'][:10])}</span><span>{money(o['total'])}</span><span class="pill">{STATUS.get(o['status'],'نامشخص')}</span></a>''' for o in orders) or '<p class="muted">هنوز سفارشی ثبت نکرده‌اید.</p>'
-    fav=conn.execute('SELECT p.* FROM favorites f JOIN products p ON p.id=f.product_id WHERE f.user_id=? AND p.active=1 ORDER BY p.id DESC',(sess['uid'],)).fetchall()
-    body=read_template('account.html',name=esc(sess['name']),email=esc(sess['email']),orders=cards,favorites=''.join(product_card(p) for p in fav) or '<p class="muted">محصولی ذخیره نشده است.</p>',csrf=esc(sess['csrf']))
+    orders = conn.execute('SELECT * FROM orders WHERE user_id=? ORDER BY id DESC LIMIT 100',(sess['uid'],)).fetchall()
+    order_count = len(orders)
+    total_spent = sum(int(o['total']) for o in orders)
+    favorites_rows = conn.execute('SELECT p.* FROM favorites f JOIN products p ON p.id=f.product_id WHERE f.user_id=? AND p.active=1 ORDER BY p.id DESC',(sess['uid'],)).fetchall()
+    favorite_count = len(favorites_rows)
+    order_cards = []
+    for o in orders:
+        items = conn.execute('SELECT oi.product_name,oi.quantity,oi.color,p.image FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id WHERE oi.order_id=? ORDER BY oi.id',(o['id'],)).fetchall()
+        thumbs = ''.join(f'<img src="{esc(i["image"] or "/static/img/vest.svg")}" alt="{esc(i["product_name"])}" loading="lazy" decoding="async" width="64" height="80">' for i in items[:4])
+        line_names = ' · '.join(esc(i['product_name']) + (f' ({esc(i["color"])})' if i['color'] else '') for i in items[:2])
+        if len(items) > 2:
+            line_names += ' …'
+        item_count = sum(int(i['quantity']) for i in items)
+        order_cards.append(f'''<a class="order-showcase-card" href="/account/orders/{o['id']}" data-nav>
+            <div class="order-showcase-media">
+                <div class="bundle-stack">{thumbs or '<span class="bundle-empty">DELISA</span>'}</div>
+                <div class="bundle-meta"><strong>{item_count}</strong><span>قلم</span></div>
+            </div>
+            <div class="order-showcase-body">
+                <div class="order-meta-top"><span class="eyebrow ink">ORDER #{o['id']}</span><span>{esc(o['created_at'][:10])}</span></div>
+                <strong>سفارش #{o['id']}</strong>
+                <p>{line_names or 'بدون جزئیات ثبت شده'}</p>
+                <div class="order-meta-bottom"><span class="pill status-{esc(o['status'])}">{STATUS.get(o['status'],'نامشخص')}</span><b>{money(o['total'])}</b></div>
+            </div>
+        </a>''')
+    cards = ''.join(order_cards) or '<div class="empty-card"><strong>هنوز سفارشی ثبت نکرده‌ای.</strong><p class="muted">اولین خریدت از دلیسا همین‌جا نمایش داده می‌شود.</p><a href="/shop" data-nav class="btn btn-light">کشف محصولات</a></div>'
+    body = read_template('account.html', name=esc(sess['name']), email=esc(sess['email']), csrf=esc(sess['csrf']), order_count=esc(order_count), total_spent=money(total_spent), favorite_count=esc(favorite_count), orders=cards, favorites=''.join(product_card(p) for p in favorites_rows) or '<div class="empty-card"><strong>هنوز چیزی ذخیره نکرده‌ای.</strong><p class="muted">محصولات موردعلاقه‌ات را برای بعد نگه دار.</p></div>')
     return layout(body,'حساب من | دلیسا',sess,'/account')
 
 
 def order_detail(conn,sess,order_id):
     require_user(sess)
-    order=conn.execute('SELECT * FROM orders WHERE id=? AND (user_id=? OR ?=1)',(order_id,sess['uid'],int(sess['role']=='admin'))).fetchone()
-    if not order:raise HTTPError(404,'سفارش پیدا نشد.')
-    items=conn.execute('SELECT * FROM order_items WHERE order_id=?',(order_id,)).fetchall()
-    rows=''.join(f'<tr><td>{esc(i["product_name"])}{" · " + esc(i["color"]) if i["color"] else ""}</td><td>{i["quantity"]}</td><td>{money(i["unit_price"]*i["quantity"])}</td></tr>' for i in items)
+    order = conn.execute('SELECT * FROM orders WHERE id=? AND (user_id=? OR ?=1)',(order_id,sess['uid'],int(sess['role']=='admin'))).fetchone()
+    if not order: raise HTTPError(404,'سفارش پیدا نشد.')
+    items = conn.execute('SELECT oi.*, p.image, p.slug FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id WHERE oi.order_id=? ORDER BY oi.id',(order_id,)).fetchall()
+    rows = ''.join(f'<tr><td>{esc(i["product_name"])}{" · " + esc(i["color"]) if i["color"] else ""}</td><td>{i["quantity"]}</td><td>{money(i["unit_price"]*i["quantity"])}</td></tr>' for i in items)
+    item_cards = ''.join(f'''<article class="order-item-card"><a href="/product/{esc(i['slug'])}" data-nav class="order-item-photo"><img src="{esc(i['image'] or '/static/img/vest.svg')}" alt="{esc(i['product_name'])}" loading="lazy" decoding="async" width="96" height="118"></a><div class="order-item-copy"><strong>{esc(i['product_name'])}</strong><span>{'رنگ: ' + esc(i['color']) if i['color'] else 'رنگ انتخاب نشده'}</span><span>{i['quantity']} عدد</span></div><b>{money(i['unit_price']*i['quantity'])}</b></article>''' for i in items)
     savings = ''
     if order['coupon_code'] and order['discount_amount']:
         savings = '<div class="summary-line coupon-savings"><span>کد تخفیف ' + esc(order['coupon_code']) + '</span><strong>− ' + money(order['discount_amount']) + '</strong></div>'
-    body=read_template('order.html',coupon_savings=savings,number=order_id,status=STATUS.get(order['status'],'نامشخص'),name=esc(order['full_name']),phone=esc(order['phone']),city=esc(order['city']),address=esc(order['address']),total=money(order['total']),rows=rows,payment='درگاه پرداخت هنوز متصل نشده است؛ این سفارش آزمایشی است.')
+    body = read_template('order.html', coupon_savings=savings, number=order_id, status=STATUS.get(order['status'],'نامشخص'), name=esc(order['full_name']), phone=esc(order['phone']), city=esc(order['city']), address=esc(order['address']), total=money(order['total']), rows=rows, items_cards=item_cards or '<p class="muted">جزئیات اقلام ثبت نشده است.</p>', payment='درگاه پرداخت هنوز متصل نشده است؛ این سفارش آزمایشی است.')
     return layout(body,f'سفارش #{order_id} | دلیسا',sess,'/account/orders/'+str(order_id))
 
 
@@ -582,9 +606,9 @@ def checkout_page(conn,sess):
 
 
 def admin_layout(content,title,sess):
-    menu='''<a href="/admin">داشبورد</a><a href="/admin/products">محصولات</a><a href="/admin/orders">سفارش‌ها</a><a href="/admin/coupons">کدهای تخفیف</a><a href="/admin/users">کاربران</a><a href="/admin/export/orders">خروجی CSV</a>'''
-    content=f'<section class="admin-head"><div><span class="eyebrow">DELISA CONTROL</span><h1>{esc(title)}</h1></div><a class="small-link" href="/">نمایش فروشگاه ←</a></section><nav class="admin-nav">{menu}</nav>{content}'
-    return layout(f'<div class="container admin-wrap">{content}</div>',title+' | مدیریت دلیسا',sess,'/admin')
+    menu='''<a href="/admin">داشبورد</a><a href="/admin/accounting">حسابداری</a><a href="/admin/products">محصولات</a><a href="/admin/orders">سفارش‌ها</a><a href="/admin/coupons">کدهای تخفیف</a><a href="/admin/users">کاربران</a><a href="/admin/export/orders">خروجی CSV</a>'''
+    head=f'''<section class="admin-head admin-head-pro"><div><span class="eyebrow">DELISA CONTROL ROOM</span><h1>{esc(title)}</h1><p class="muted">کنترل کامل محصولات، سفارش‌ها، مشتری‌ها و تحلیل فروش در یک نگاه.</p></div><div class="admin-head-actions"><a class="btn btn-light" href="/">نمایش فروشگاه</a><a class="btn" href="/admin/products/new">محصول جدید</a></div></section><nav class="admin-nav">{menu}</nav>'''
+    return layout(f'<div class="container admin-wrap">{head}{content}</div>',title+' | مدیریت دلیسا',sess,'/admin')
 
 
 def admin_dashboard(conn,sess):
@@ -596,18 +620,48 @@ def admin_dashboard(conn,sess):
         'views':'SELECT COUNT(*) FROM page_views',
         'visitors':'SELECT COUNT(DISTINCT visitor_hash) FROM page_views',
         'low':'SELECT COUNT(*) FROM products WHERE active=1 AND stock<=3',
-        'pending':"SELECT COUNT(*) FROM orders WHERE status='pending'"}.items():
+        'pending':"SELECT COUNT(*) FROM orders WHERE status='pending'",
+        'discounts':"SELECT COALESCE(SUM(discount_amount),0) FROM orders",
+        'avg':"SELECT COALESCE(AVG(total),0) FROM orders WHERE status!='cancelled'"}.items():
         stats[key]=conn.execute(sql).fetchone()[0]
-    tiles=[('بازدید صفحات',stats['views']),('بازدیدکننده یکتا (مرورگر)',stats['visitors']),('محصول فعال',stats['products']),('مشتری',stats['customers']),('سفارش آزمایشی',stats['orders']),('در انتظار بررسی',stats['pending']),('موجودی کم (≤۳)',stats['low']),('مجموع ارزش سفارش‌های غیرلغوشده',money(stats['revenue']))]
-    tiles_html=''.join(f'<div class="stat"><small>{name}</small><strong>{val}</strong></div>' for name,val in tiles)
-    since=(dt.datetime.now(dt.timezone.utc)-dt.timedelta(days=6)).date().isoformat()
-    graph=conn.execute('SELECT created_day, COUNT(*) AS hits,COUNT(DISTINCT visitor_hash) AS visitors FROM page_views WHERE created_day>=? GROUP BY created_day ORDER BY created_day',(since,)).fetchall()
+    conversion = f"{(100*stats['orders']/stats['visitors']):.1f}٪" if stats['visitors'] else '۰٪'
+    kpi_cards=[('درآمد کل',money(stats['revenue']),'ارزش کل سفارش‌های ثبت‌شده'),('میانگین سبد خرید',money(int(stats['avg'] or 0)),'میانگین مبلغ هر سفارش'),('مجموع تخفیف‌ها',money(stats['discounts']),'تخفیف محصول و کد'),('نرخ تبدیل تقریبی',conversion,'سفارش نسبت به بازدیدکننده'),('سفارش‌های در انتظار',stats['pending'],'نیازمند پیگیری'),('موجودی کم',stats['low'],'محصولات با موجودی ≤ ۳')]
+    tiles_html=''.join(f'<article class="stat stat-pro"><small>{name}</small><strong>{val}</strong><span>{desc}</span></article>' for name,val,desc in kpi_cards)
+    since=(dt.datetime.now(dt.timezone.utc)-dt.timedelta(days=13)).date().isoformat()
+    graph=conn.execute('SELECT created_day, COUNT(*) AS hits, COUNT(DISTINCT visitor_hash) AS visitors FROM page_views WHERE created_day>=? GROUP BY created_day ORDER BY created_day',(since,)).fetchall()
     max_hits=max((r['hits'] for r in graph),default=1)
-    graph_html=''.join(f'<div class="barrow"><span>{esc(r["created_day"][5:])}</span><div class="bar-track"><div class="bar-fill" style="width:{int(100*r["hits"]/max_hits)}%"></div></div><small>{r["hits"]} بازدید / {r["visitors"]} نفر</small></div>' for r in graph) or '<p class="muted">هنوز داده‌ای نیست.</p>'
-    top=conn.execute('SELECT path,COUNT(*) AS hits FROM page_views GROUP BY path ORDER BY hits DESC LIMIT 6').fetchall()
-    top_html=''.join(f'<div class="summary-line"><code dir="ltr">{esc(x["path"])}</code><strong>{x["hits"]}</strong></div>' for x in top)
-    body=f'<div class="stats">{tiles_html}</div><div class="admin-columns"><section class="panel"><h2>بازدید ۷ روز اخیر</h2>{graph_html}</section><section class="panel"><h2>صفحات پربازدید</h2>{top_html or "هنوز داده‌ای نیست."}</section></div><p class="muted">آمار بازدید بدون ذخیره IP است. بازدیدکننده یکتا بر اساس نشست مرورگر شمارش می‌شود و با تعداد افراد واقعی یکسان نیست.</p>'
+    graph_html=''.join(f'<div class="barrow pro"><span>{esc(r["created_day"][5:])}</span><div class="bar-track"><div class="bar-fill" style="width:{int(100*r["hits"]/max_hits)}%"></div></div><small>{r["hits"]} بازدید · {r["visitors"]} نفر</small></div>' for r in graph) or '<p class="muted">هنوز داده‌ای نیست.</p>'
+    status_rows=conn.execute('SELECT status, COUNT(*) AS count, COALESCE(SUM(total),0) AS total FROM orders GROUP BY status ORDER BY count DESC').fetchall()
+    max_status=max((r['count'] for r in status_rows),default=1)
+    status_html=''.join(f'<div class="barrow pro"><span>{esc(STATUS.get(r["status"],r["status"]))}</span><div class="bar-track"><div class="bar-fill is-soft" style="width:{int(100*r["count"]/max_status)}%"></div></div><small>{r["count"]} سفارش · {money(r["total"] )}</small></div>' for r in status_rows) or '<p class="muted">سفارشی ثبت نشده.</p>'
+    top_products=conn.execute('SELECT oi.product_name, SUM(oi.quantity) AS qty, SUM(oi.quantity*oi.unit_price) AS revenue FROM order_items oi JOIN orders o ON o.id=oi.order_id WHERE o.status!=? GROUP BY oi.product_name ORDER BY qty DESC, revenue DESC LIMIT 6',('cancelled',)).fetchall()
+    top_products_html=''.join(f'<div class="summary-line"><span>{esc(r["product_name"])} <small>× {r["qty"]}</small></span><strong>{money(r["revenue"] )}</strong></div>' for r in top_products) or '<p class="muted">فروشی ثبت نشده.</p>'
+    low_stock=conn.execute('SELECT id,name,stock FROM products WHERE active=1 ORDER BY stock ASC, id DESC LIMIT 6').fetchall()
+    low_stock_html=''.join(f'<div class="summary-line"><span>{esc(r["name"] )}</span><strong>{r["stock"]}</strong></div>' for r in low_stock) or '<p class="muted">محصولی وجود ندارد.</p>'
+    promo_rows=conn.execute('SELECT code,used_count,kind,value FROM coupons ORDER BY used_count DESC, id DESC LIMIT 5').fetchall()
+    promo_html=''.join(f'<div class="summary-line"><span><code dir="ltr">{esc(r["code"])} </code></span><strong>{r["used_count"]} استفاده</strong></div>' for r in promo_rows) or '<p class="muted">کد تخفیفی ساخته نشده.</p>'
+    quick=f'''<section class="admin-quick-grid"><a class="quick-card" href="/admin/products"><strong>{stats['products']}</strong><span>مدیریت محصولات</span></a><a class="quick-card" href="/admin/orders"><strong>{stats['orders']}</strong><span>پیگیری سفارش‌ها</span></a><a class="quick-card" href="/admin/accounting"><strong>{money(stats['revenue'])}</strong><span>گزارش حسابداری</span></a><a class="quick-card" href="/admin/users"><strong>{stats['customers']}</strong><span>مشتری ثبت‌شده</span></a></section>'''
+    body=f'<section class="stats stats-pro">{tiles_html}</section>{quick}<div class="admin-columns admin-columns-pro"><section class="panel glass-panel"><h2>روند بازدید ۱۴ روز اخیر</h2>{graph_html}</section><section class="panel glass-panel"><h2>وضعیت سفارش‌ها</h2>{status_html}</section></div><div class="admin-columns admin-columns-pro admin-columns-3"><section class="panel glass-panel"><h2>پرفروش‌ترین‌ها</h2>{top_products_html}</section><section class="panel glass-panel"><h2>نیازمند تأمین موجودی</h2>{low_stock_html}</section><section class="panel glass-panel"><h2>عملکرد کدهای تخفیف</h2>{promo_html}</section></div><p class="muted">آمار بازدید بدون ذخیره IP است. بازدیدکننده یکتا بر اساس نشست مرورگر شمارش می‌شود و با تعداد افراد واقعی یکسان نیست.</p>'
     return admin_layout(body,'داشبورد',sess)
+
+
+def admin_accounting(conn,sess):
+    require_user(sess,True)
+    total_revenue = conn.execute("SELECT COALESCE(SUM(total),0) FROM orders WHERE status!='cancelled'").fetchone()[0]
+    total_discounts = conn.execute('SELECT COALESCE(SUM(discount_amount),0) FROM orders').fetchone()[0]
+    shipping_cities = conn.execute('SELECT city, COUNT(*) AS orders, COALESCE(SUM(total),0) AS total FROM orders GROUP BY city ORDER BY total DESC, orders DESC LIMIT 8').fetchall()
+    top_products = conn.execute('SELECT oi.product_name, SUM(oi.quantity) AS qty, SUM(oi.quantity*oi.unit_price) AS revenue FROM order_items oi JOIN orders o ON o.id=oi.order_id WHERE o.status!=? GROUP BY oi.product_name ORDER BY revenue DESC, qty DESC LIMIT 8',('cancelled',)).fetchall()
+    daily = conn.execute('SELECT substr(created_at,1,10) AS day, COUNT(*) AS orders, COALESCE(SUM(total),0) AS total FROM orders WHERE substr(created_at,1,10)>=? GROUP BY day ORDER BY day',((dt.datetime.now(dt.timezone.utc)-dt.timedelta(days=29)).date().isoformat(),)).fetchall()
+    max_total = max((r['total'] for r in daily), default=1)
+    daily_html = ''.join(f'<div class="barrow pro"><span>{esc(r["day"][5:])}</span><div class="bar-track"><div class="bar-fill" style="width:{int(100*r["total"]/max_total) if max_total else 0}%"></div></div><small>{money(r["total"] )} · {r["orders"]} سفارش</small></div>' for r in daily) or '<p class="muted">هنوز سفارشی ثبت نشده.</p>'
+    top_products_html = ''.join(f'<div class="summary-line"><span>{esc(r["product_name"])} <small>× {r["qty"]}</small></span><strong>{money(r["revenue"] )}</strong></div>' for r in top_products) or '<p class="muted">فروشی ثبت نشده.</p>'
+    city_html = ''.join(f'<div class="summary-line"><span>{esc(r["city"] or "—")}</span><strong>{money(r["total"] )} <small>· {r["orders"]} سفارش</small></strong></div>' for r in shipping_cities) or '<p class="muted">هنوز داده‌ای وجود ندارد.</p>'
+    coupon_rows = conn.execute('SELECT code,kind,value,used_count FROM coupons ORDER BY used_count DESC, id DESC LIMIT 8').fetchall()
+    coupon_html = ''.join(f'<div class="summary-line"><span><code dir="ltr">{esc(r["code"])} </code></span><strong>{r["used_count"]} بار</strong></div>' for r in coupon_rows) or '<p class="muted">کد تخفیفی ندارید.</p>'
+    recent = conn.execute('SELECT id,full_name,total,status,created_at FROM orders ORDER BY id DESC LIMIT 8').fetchall()
+    recent_html = ''.join(f'<tr><td>#{r["id"]}</td><td>{esc(r["full_name"] )}</td><td>{money(r["total"] )}</td><td>{esc(STATUS.get(r["status"],r["status"]))}</td><td>{esc(r["created_at"][:10])}</td></tr>' for r in recent)
+    body=f'''<section class="stats stats-pro accounting-kpis"><article class="stat stat-pro"><small>فروش کل</small><strong>{money(total_revenue)}</strong><span>بدون سفارش‌های لغوشده</span></article><article class="stat stat-pro"><small>تخفیف اعطا شده</small><strong>{money(total_discounts)}</strong><span>محصول + کد تخفیف</span></article><article class="stat stat-pro"><small>درآمد خالص تقریبی</small><strong>{money(max(total_revenue-total_discounts,0))}</strong><span>قبل از هزینه‌ها</span></article><article class="stat stat-pro"><small>تعداد شهرهای فعال</small><strong>{len(shipping_cities)}</strong><span>بر اساس سفارش‌های ثبت‌شده</span></article></section><div class="admin-columns admin-columns-pro"><section class="panel glass-panel"><h2>گردش فروش ۳۰ روز اخیر</h2>{daily_html}</section><section class="panel glass-panel"><h2>فروش به تفکیک شهر</h2>{city_html}</section></div><div class="admin-columns admin-columns-pro admin-columns-3"><section class="panel glass-panel"><h2>محصولات درآمدساز</h2>{top_products_html}</section><section class="panel glass-panel"><h2>کدهای تخفیف فعال</h2>{coupon_html}</section><section class="panel glass-panel"><h2>نکات حسابداری</h2><div class="summary-line"><span>اتصال درگاه</span><strong>فعال نیست</strong></div><div class="summary-line"><span>نوع فروش</span><strong>آزمایشی / دمو</strong></div><div class="summary-line"><span>تسویه</span><strong>دستی</strong></div><p class="muted tiny">این بخش برای تحلیل فروش و مدیریت داخلی آماده شده و تا پیش از اتصال درگاه، جنبه عملیاتی کامل ندارد.</p></section></div><section class="panel glass-panel"><h2>آخرین سفارش‌ها</h2><div class="table-wrap"><table><thead><tr><th>سفارش</th><th>مشتری</th><th>مبلغ</th><th>وضعیت</th><th>تاریخ</th></tr></thead><tbody>{recent_html}</tbody></table></div></section>'''
+    return admin_layout(body,'حسابداری و تحلیل فروش',sess)
 
 
 def admin_products(conn,sess):
@@ -693,6 +747,7 @@ def main_handler(req,conn,sess):
         if match:return order_detail(conn,sess,int(match[1])) if sess.get('uid') else redirect('/login')
         if p=='/admin':require_user(sess,True);return admin_dashboard(conn,sess)
         if p=='/admin/products':require_user(sess,True);return admin_products(conn,sess)
+        if p=='/admin/accounting':require_user(sess,True);return admin_accounting(conn,sess)
         if p=='/admin/coupons':require_user(sess,True);return admin_coupons(conn,sess)
         if p=='/admin/products/new':require_user(sess,True);return admin_product_form(conn,sess)
         match=re.fullmatch(r'/admin/products/(\d+)/edit',p)
