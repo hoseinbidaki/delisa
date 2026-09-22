@@ -19,7 +19,9 @@
 <link rel="stylesheet" href="/static/css/atelier-v110.css?v=1.10.0">
 <link rel="stylesheet" href="/static/css/atelier-v111.css?v=1.11.0">
 <link rel="stylesheet" href="/static/css/atelier-v112-mobile.css?v=1.12.0">
-<script src="/static/js/app.js?v=1.10.0" defer></script>
+<link rel="stylesheet" href="/static/css/atelier-v113.css?v=1.13.0">
+<link rel="stylesheet" href="/static/css/atelier-v114.css?v=1.14.0">
+<script src="/static/js/app.js?v=1.10.0&amp;patch=1.14.0" defer></script>
 <script src="/static/js/gallery-v18.js?v=1.9.0" defer></script>
 <script src="/static/js/details-v15.js?v=1.5.0" defer></script>
 <script src="/static/js/coupons-v16.js?v=1.6.0" defer></script>
@@ -30,15 +32,15 @@
 <a class="skip-link" href="#page-root">رفتن به محتوای اصلی</a>
 <div class="noticebar"><span>DELISA ATELIER</span><span class="notice-divider" aria-hidden="true">—</span> <span>لباس‌هایی برای زندگی روزمره، با جزئیاتی ماندگار</span></div>
 <header class="site-header" id="site-header">
- <div class="header-side header-right"><button class="icon-button mobile-only" id="menu-toggle" aria-label="منو"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><nav class="desktop-nav"><a href="/shop" data-nav>فروشگاه</a><a href="/shop?sort=newest" data-nav>جدیدها</a><a href="/#story" data-nav>درباره دلیسا</a></nav></div>
+ <div class="header-side header-right"><nav class="desktop-nav"><a href="/shop" data-nav>فروشگاه</a><a href="/shop?sort=newest" data-nav>جدیدها</a><a href="/#story" data-nav>درباره دلیسا</a></nav></div>
  <a class="brand" data-nav href="/" aria-label="خانه دلیسا">DELISA<small>ATELIER</small></a>
- <div class="header-side header-left"><button class="icon-button" id="search-toggle" aria-label="جستجو"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.2"/><path d="m15.4 15.4 5 5"/></svg></button><a class="user-link" href="$account_link" aria-label="حساب کاربری"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20c0-5 15-5 15 0"/></svg></a><button class="icon-button cart-toggle" id="cart-toggle" aria-label="سبد خرید"><svg viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6L5 8zM9 9V6a3 3 0 0 1 6 0v3"/></svg><span class="cart-count" id="cart-count" aria-live="polite">0</span></button></div>
+ <div class="header-side header-left"><button class="icon-button" id="search-toggle" aria-label="جستجو"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.2"/><path d="m15.4 15.4 5 5"/></svg></button><a class="user-link" href="$account_link" aria-label="حساب کاربری"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20c0-5 15-5 15 0"/></svg></a>$admin_link<button class="icon-button cart-toggle" id="cart-toggle" aria-label="سبد خرید"><svg viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6L5 8zM9 9V6a3 3 0 0 1 6 0v3"/></svg><span class="cart-count" id="cart-count" aria-live="polite">0</span></button></div>
 </header>
+<nav class="mobile-quick-nav" aria-label="دسترسی سریع فروشگاه"><a href="/shop" data-nav>فروشگاه</a><a href="/shop?sort=newest" data-nav>جدیدها</a><a href="/#story" data-nav>درباره دلیسا</a></nav>
 <main id="page-root" data-page-path="$path" tabindex="-1">$page</main>
 <footer class="footer"><div class="footer-grid container"><div><div class="brand footer-brand">DELISA<small>ATELIER</small></div><p>سادگی، با جزئیاتی که می‌ماند.</p></div><div><strong>دلیسا</strong><a href="/shop" data-nav>فروشگاه</a><a href="/shop?sort=newest" data-nav>جدیدترین‌ها</a><a href="/#story" data-nav>داستان ما</a></div><div><strong>راهنمای خرید</strong><a href="/account" data-nav>حساب من</a><a href="/account" data-nav>پیگیری سفارش‌ها</a><a href="/shop" data-nav>محصولات</a></div><div><strong>حساب</strong>$account_nav</div></div><div class="footer-bottom container">© DELISA ATELIER <span>نسخه آزمایشی · پرداخت واقعی فعال نیست</span></div></footer>
 <div class="backdrop" id="backdrop" hidden></div>
 <div class="drawer" id="cart-drawer" role="dialog" aria-modal="true" aria-label="سبد خرید" aria-hidden="true"><div class="drawer-top"><strong>سبد خرید</strong><button data-close class="close" aria-label="بستن">×</button></div><div class="drawer-content" id="cart-content"><p class="muted">در حال دریافت...</p></div><div class="drawer-foot" id="cart-foot"></div></div>
-<div class="drawer menu-drawer" id="menu-drawer" role="dialog" aria-modal="true" aria-label="منو" aria-hidden="true"><div class="drawer-top"><strong class="brand">DELISA</strong><button data-close class="close">×</button></div><nav class="mobile-nav"><a href="/" data-nav>خانه</a><a href="/shop" data-nav>فروشگاه</a><a href="/shop?sort=newest" data-nav>جدیدها</a><a href="$account_link">حساب من</a><a href="/#story" data-nav>درباره دلیسا</a></nav></div>
 <div class="search-overlay search-v18" id="search-overlay" role="dialog" aria-modal="true" aria-labelledby="search-heading" aria-hidden="true">
   <div class="search-inner">
    <div class="search-topline"><span>DELISA / DISCOVER</span><button type="button" data-close class="search-close" aria-label="بستن جستجو">× <small>بستن</small></button></div>

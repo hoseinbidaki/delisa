@@ -17,7 +17,7 @@ const currency=n=>numeral(n)+' تومان';
 const escapeText=t=>String(t??'');
 function toast(message){const el=document.querySelector('#toast');el.textContent=message;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3200)}
 function openOverlay(el){closeOverlays(true);el.classList.add('open');el.setAttribute('aria-hidden','false');backdrop.hidden=false;document.body.classList.add('lock');requestAnimationFrame(()=>backdrop.classList.add('show'))}
-function closeOverlays(immediate=false){[cartDrawer,menuDrawer,searchOverlay].forEach(el=>{el.classList.remove('open');el.setAttribute('aria-hidden','true')});backdrop.classList.remove('show');clearTimeout(backdropTimer);if(immediate===true){backdrop.hidden=true}else{backdropTimer=setTimeout(()=>{if(!backdrop.classList.contains('show'))backdrop.hidden=true},280)}document.body.classList.remove('lock')}
+function closeOverlays(immediate=false){[cartDrawer,menuDrawer,searchOverlay].filter(Boolean).forEach(el=>{el.classList.remove('open');el.setAttribute('aria-hidden','true')});backdrop.classList.remove('show');clearTimeout(backdropTimer);if(immediate===true){backdrop.hidden=true}else{backdropTimer=setTimeout(()=>{if(!backdrop.classList.contains('show'))backdrop.hidden=true},280)}document.body.classList.remove('lock')}
 backdrop.addEventListener('click',closeOverlays);
 document.addEventListener('click',e=>{if(e.target.closest('[data-close]'))closeOverlays()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeOverlays()});
@@ -97,10 +97,21 @@ async function fetchPage(url,signal){
  if(!next||next.dataset.pagePath!==url.pathname)throw Error('Unexpected page content');
  return {markup:next.innerHTML,title:doc.title,description:doc.querySelector('meta[name="description"]')?.content||''};
 }
-function updateActiveLinks(path){
- document.querySelectorAll('.desktop-nav a,.mobile-nav a').forEach(a=>{
-  let target=urlFor(a.href);
-  if(target&&target.pathname===path&&path!=='/'){a.setAttribute('aria-current','page')}
+function updateActiveLinks(pathAndSearch){
+ // /shop and /shop?sort=newest are different destinations: never mark both active.
+ const current=urlFor(pathAndSearch);
+ document.querySelectorAll('.desktop-nav a,.mobile-quick-nav a,.mobile-nav a').forEach(a=>{
+  const target=urlFor(a.href);
+  let active=false;
+  if(target&&current){
+   if(target.pathname==='/shop'&&current.pathname==='/shop'){
+    const newIn=current.searchParams.get('sort')==='newest';
+    active=(target.searchParams.get('sort')==='newest')===newIn;
+   }else if(target.pathname===current.pathname&&target.pathname!=='/'){
+    active=target.search===current.search;
+   }
+  }
+  if(active)a.setAttribute('aria-current','page');
   else a.removeAttribute('aria-current');
  });
 }
@@ -109,7 +120,7 @@ function showPage(page,url,scroll){
  main.dataset.pagePath=url.pathname;
  document.title=page.title;
  const desc=document.querySelector('meta[name="description"]');if(desc)desc.content=page.description;
- updateActiveLinks(url.pathname);
+ updateActiveLinks(url.pathname+url.search);
  main.classList.remove('page-enter');void main.offsetWidth;main.classList.add('page-enter');
  restoreScroll(scroll);
  if(url.hash)setTimeout(()=>document.getElementById(decodeURIComponent(url.hash.slice(1)))?.scrollIntoView(),90);
@@ -160,7 +171,7 @@ function startPrefetch(anchor){
 }
 // First document is already server rendered: no blank client-side boot screen.
 remember(keyOf(new URL(location.href)),currentPage());
-updateActiveLinks(location.pathname);
+updateActiveLinks(location.pathname+location.search);
 // Save position for browser reload; soft Back/Forward uses history state.
 window.addEventListener('scroll',()=>{
  clearTimeout(scrollTimer);scrollTimer=setTimeout(()=>{

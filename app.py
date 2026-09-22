@@ -419,8 +419,14 @@ def nav_user(sess):
 
 
 def layout(page, title, sess, path, description='فروشگاه آنلاین پوشاک دلیسا'):
+    admin_link = ('<a class="admin-header-link" href="/admin" aria-label="پنل مدیریت" title="پنل مدیریت">'
+                  '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1"/>'
+                  '<rect x="13.5" y="3.5" width="7" height="7" rx="1"/>'
+                  '<rect x="3.5" y="13.5" width="7" height="7" rx="1"/>'
+                  '<rect x="13.5" y="13.5" width="7" height="7" rx="1"/></svg>'
+                  '<span>مدیریت</span></a>') if sess.get('role') == 'admin' and sess.get('uid') else ''
     out = read_template('base.html', page=page, title=esc(title),description=esc(description),
-                        account_nav=nav_user(sess),account_link='/account' if sess.get('uid') else '/login',csrf=esc(sess['csrf']),path=esc(path))
+                        account_nav=nav_user(sess),account_link='/account' if sess.get('uid') else '/login',admin_link=admin_link,csrf=esc(sess['csrf']),path=esc(path))
     return Response(out, headers=[('Cache-Control','private, no-cache, must-revalidate' if path=='/' or path=='/shop' or path.startswith('/product/') else 'private, no-store'),('X-Content-Type-Options','nosniff'),('Referrer-Policy','strict-origin-when-cross-origin'),('X-Frame-Options','DENY')])
 
 
