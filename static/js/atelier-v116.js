@@ -1,4 +1,4 @@
-/* DELISA v1.16.3 mobile UX: internal Back + three-point cart sheet; no dependencies. */
+/* DELISA v1.16.4 mobile UX: internal Back + three-point cart sheet; no dependencies. */
 (()=>{
 'use strict';
 const mobileNav=document.querySelector('#mobile-bottom-nav');
@@ -24,7 +24,7 @@ function alertUser(message){
 function refreshMobileNav(){
  if(!mobileNav)return;
  const path=location.pathname;
-  const chosen=path==='/'?'home':path==='/shop'?'shop':(path==='/account'||path.startsWith('/account/')||path==='/login'||path==='/register')?'account':'';
+  const chosen=path==='/'?'home':(path==='/shop'||path.startsWith('/product/'))?'shop':(path==='/account'||path.startsWith('/account/')||path==='/login'||path==='/register')?'account':'';
  mobileNav.querySelectorAll('[data-bottom-route]').forEach(link=>{
   if(link.dataset.bottomRoute===chosen)link.setAttribute('aria-current','page');
   else link.removeAttribute('aria-current');
@@ -154,6 +154,64 @@ if(sheet&&sheetTop){
  window.addEventListener('resize',()=>{if(mobileScreen.matches&&sheet.classList.contains('open')&&!gesture)snapSheet(sheetState)},{passive:true});
  window.visualViewport?.addEventListener('resize',()=>{if(mobileScreen.matches&&sheet.classList.contains('open')&&!gesture)snapSheet(sheetState)},{passive:true});
 }
+// Liquid-glass nav response: pointerdown gives immediate tactile feedback;
+// one sliding highlight follows the active destination, including SPA navigation.
+if(mobileNav){
+ const navPill=document.createElement('span');
+ navPill.className='delisa-glass-pill';
+ navPill.setAttribute('aria-hidden','true');
+ mobileNav.prepend(navPill);
+ let pillFrame=0,pressed=null,pressTimer=0,temporaryUntil=0;
+ const navItems=()=>Array.from(mobileNav.querySelectorAll(':scope > a,:scope > button')).filter(el=>!el.hidden);
+ function selectedItem(){
+  if(mobileScreen.matches&&sheet?.classList.contains('open'))return smallCart;
+  return mobileNav.querySelector('[data-bottom-route][aria-current="page"]')||null;
+ }
+ function movePill(item){
+  if(!item||item.hidden||!mobileScreen.matches){navPill.style.opacity='0';return}
+  const left=item.offsetLeft;
+  if(!Number.isFinite(left)||!item.offsetWidth)return;
+  navPill.style.width=item.offsetWidth+'px';
+  navPill.style.transform='translate3d('+left+'px,0,0)';
+  navPill.style.opacity='1';
+  if(!navPill.classList.contains('is-ready'))requestAnimationFrame(()=>navPill.classList.add('is-ready'));
+ }
+ function schedulePill(){
+  if(pillFrame)cancelAnimationFrame(pillFrame);
+  pillFrame=requestAnimationFrame(()=>{pillFrame=0;if(performance.now()<temporaryUntil&&pressed)return;movePill(selectedItem())});
+ }
+ function clearPress(){
+  clearTimeout(pressTimer);
+  if(pressed){pressed.classList.remove('is-pressing');pressed=null}
+  temporaryUntil=0;
+  schedulePill();
+ }
+ mobileNav.addEventListener('pointerdown',e=>{
+  const item=e.target.closest('a,button');
+  if(!item||item.parentElement!==mobileNav||item.hidden||e.button!==0||e.isPrimary===false)return;
+  if(pressed&&pressed!==item)pressed.classList.remove('is-pressing');
+  pressed=item;item.classList.add('is-pressing');
+  temporaryUntil=performance.now()+460;
+  movePill(item);
+  clearTimeout(pressTimer);
+  pressTimer=setTimeout(clearPress,540);
+ },{passive:true});
+ mobileNav.addEventListener('pointerup',()=>{clearTimeout(pressTimer);pressTimer=setTimeout(clearPress,165)},{passive:true});
+ mobileNav.addEventListener('pointercancel',clearPress,{passive:true});
+ mobileNav.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')clearPress()},{passive:true});
+ mobileNav.addEventListener('click',()=>{clearTimeout(pressTimer);pressTimer=setTimeout(clearPress,330)});
+ mobileNav.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('a,button'))movePill(e.target)});
+ // Only small attribute changes are observed: never watch styles modified by this code.
+ new MutationObserver(schedulePill).observe(mobileNav,{subtree:true,attributes:true,attributeFilter:['aria-current','hidden','class']});
+ if(sheet)new MutationObserver(schedulePill).observe(sheet,{attributes:true,attributeFilter:['class']});
+ window.addEventListener('popstate',()=>requestAnimationFrame(schedulePill));
+ window.addEventListener('pageshow',schedulePill);
+ window.addEventListener('resize',schedulePill,{passive:true});
+ if('ResizeObserver'in window)new ResizeObserver(schedulePill).observe(mobileNav);
+ if(main)new MutationObserver(schedulePill).observe(main,{attributes:true,attributeFilter:['data-page-path']});
+ schedulePill();
+}
+
 // A spinner for actual asynchronous actions: cart, wishlist, and form requests.
 function clearBusy(){
  if(busyControl){busyControl.classList.remove('is-busy');busyControl.removeAttribute('aria-busy');busyControl=null;}
