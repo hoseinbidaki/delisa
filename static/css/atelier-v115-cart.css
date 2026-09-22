@@ -1,0 +1,98 @@
+/* DELISA 1.15.1 — compact top-drop cart. CSS-only; no new JS or network requests. */
+#cart-drawer.drawer {
+  /* Override the old full-height side drawer on desktop and mobile. */
+  position: fixed;
+  top: clamp(76px, 9vh, 108px);
+  bottom: auto;
+  left: clamp(12px, 3vw, 44px);
+  right: auto;
+  width: min(386px, calc(100vw - 24px));
+  height: auto;
+  max-height: min(68dvh, 570px);
+  min-height: 0;
+  z-index: 51;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.69);
+  border-radius: 24px;
+  background: linear-gradient(145deg, rgba(255,255,255,.61),rgba(247,243,236,.69)) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  backdrop-filter: blur(22px) saturate(160%);
+  box-shadow: 0 20px 52px rgba(16,27,43,.16), inset 0 1px 0 rgba(255,255,255,.72);
+  transform: translate3d(0,-22px,0) scale(.985) !important;
+  transform-origin: top left;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition: transform .32s cubic-bezier(.22,1,.36,1),
+              opacity .24s ease,
+              visibility 0s linear .32s !important;
+}
+#cart-drawer.drawer.open {
+  transform: translate3d(0,0,0) scale(1) !important;
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+  transition: transform .32s cubic-bezier(.22,1,.36,1),
+              opacity .24s ease,
+              visibility 0s !important;
+}
+#cart-drawer .drawer-top {
+  flex: 0 0 auto;
+  min-height: 57px;
+  padding: 10px 19px;
+  background: rgba(255,255,255,.19) !important;
+  border-bottom: 1px solid rgba(28,37,52,.08);
+}
+#cart-drawer .drawer-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 7px 19px 12px;
+  background: rgba(255,255,255,.04);
+  scrollbar-width: thin;
+}
+#cart-drawer .drawer-foot {
+  flex: 0 0 auto;
+  padding: 13px 19px 18px;
+  background: rgba(255,255,255,.23) !important;
+  border-top: 1px solid rgba(28,37,52,.09);
+}
+#cart-drawer .drawer-foot .btn { min-height: 44px; }
+#cart-drawer .cart-line { gap: 10px; padding: 10px 0; }
+#cart-drawer .cart-line img { width: 58px; height: 74px; object-fit: cover; border-radius: 9px; }
+#cart-drawer .cart-line { grid-template-columns: 58px minmax(0,1fr) auto; }
+#cart-drawer .cart-line b { font-size: 12px; }
+#cart-drawer .cart-actions { margin-top: 6px; }
+#cart-drawer .cart-actions button { min-width: 29px; min-height: 29px; border-radius: 8px; }
+/* Slight dim; preserve visible content through the cart panel. */
+body:has(#cart-drawer.open) #backdrop { background: rgba(15,23,35,.16) !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
+@media (max-width: 760px) {
+  #cart-drawer.drawer {
+    top: 65px;
+    left: 10px;
+    right: 10px;
+    width: auto;
+    max-height: min(64dvh, 515px);
+    border-radius: 22px;
+    background: linear-gradient(150deg, rgba(255,255,255,.65),rgba(246,241,233,.75)) !important;
+    -webkit-backdrop-filter: blur(15px) saturate(145%);
+    backdrop-filter: blur(15px) saturate(145%);
+  }
+  #cart-drawer .drawer-top { min-height: 54px; padding-inline: 15px; }
+  #cart-drawer .drawer-content, #cart-drawer .drawer-foot { padding-inline: 15px; }
+  #cart-drawer .drawer-foot { padding-bottom: max(13px, env(safe-area-inset-bottom)); }
+}
+@media (max-width: 380px) {
+  #cart-drawer.drawer { left: 8px; right: 8px; max-height: 62dvh; }
+  #cart-drawer .cart-line { grid-template-columns: 51px minmax(0,1fr) auto; gap: 7px; }
+  #cart-drawer .cart-line img { width: 51px; height: 68px; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  #cart-drawer.drawer { background: #faf8f4 !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #cart-drawer.drawer, #cart-drawer.drawer.open { transition: none !important; transform: none !important; }
+}
