@@ -1,0 +1,43 @@
+/* DELISA v1.27.1 — fast transitions out of fullscreen Explore. */
+/* A full-viewport blur is costly on some mobile GPUs. The surround stays dark. */
+body.exp-mode .exp-post.is-current .exp-backdrop{
+  filter:brightness(.20) saturate(.67)!important;
+  opacity:.48!important;
+  transform:none!important;
+}
+/* Show a tiny branded destination surface only if native navigation is slow.
+   Home is preloaded as HTML and normally replaces this before the next paint. */
+body.exp-mode.exp-route-leaving #page-root::before{
+  content:"دلیسا";
+  position:fixed;
+  inset:0;
+  z-index:65;
+  display:grid;
+  place-content:center;
+  text-align:center;
+  font-size:clamp(26px,6vw,50px);
+  font-weight:700;
+  letter-spacing:-.055em;
+  color:#1e2b3f;
+  background:#faf8f5;
+  pointer-events:none;
+}
+body.exp-mode.exp-route-leaving.exp-going-account #page-root::before{
+  content:"حساب من";
+}
+body.exp-mode.exp-route-leaving #page-root::after{
+  content:"در حال باز کردن صفحه…";
+  position:fixed;
+  top:calc(50% + 43px);
+  left:0;
+  width:100%;
+  text-align:center;
+  z-index:66;
+  color:#968574;
+  font-size:12px;
+  letter-spacing:0;
+  pointer-events:none;
+}
+@media(max-width:760px){
+  body.exp-mode.exp-route-leaving #page-root::after{top:calc(50% + 39px)}
+}

@@ -84,10 +84,10 @@ function nativeNavigation(url,replace=false){
  clearTimeout(loaderTimer);document.documentElement.classList.remove('delisa-loading');
  if(replace)location.replace(url);else location.assign(url);
 }
-async function fetchPage(url,signal){
+async function fetchPage(url,signal,prefetch=false){
  const response=await fetch(keyOf(url),{
   headers:{'X-Partial-Nav':'1','Accept':'text/html'},credentials:'same-origin',
-  cache:'no-store',signal
+  cache:'no-store',signal,priority:prefetch?'low':'high'
  });
  if(response.redirected){nativeNavigation(response.url);throw Error('redirect')}
  if(!response.ok||!response.headers.get('Content-Type')?.includes('text/html'))throw Error('Invalid page response');
@@ -116,12 +116,18 @@ function updateActiveLinks(pathAndSearch){
  });
 }
 function showPage(page,url,scroll){
+ const fromExplore=document.body.classList.contains('exp-mode');
+ // Release the fixed fullscreen layout BEFORE injecting Home. A forced
+ // offsetWidth here recalculated the entire (video-heavy) explorer + Home.
+ if(fromExplore)document.body.classList.remove('exp-mode','exp-route-leaving','exp-going-account');
  main.innerHTML=page.markup;
  main.dataset.pagePath=url.pathname;
  document.title=page.title;
  const desc=document.querySelector('meta[name="description"]');if(desc)desc.content=page.description;
  updateActiveLinks(url.pathname+url.search);
- main.classList.remove('page-enter');void main.offsetWidth;main.classList.add('page-enter');
+ main.classList.remove('page-enter');
+ if(!fromExplore)void main.offsetWidth;
+ main.classList.add('page-enter');
  restoreScroll(scroll);
  if(url.hash)setTimeout(()=>document.getElementById(decodeURIComponent(url.hash.slice(1)))?.scrollIntoView(),90);
 }
@@ -146,7 +152,9 @@ async function navigate(href,{push=true,scroll=0}={}){
   const from=activeKey;
   // Popstate has already changed location; activeKey still identifies outgoing DOM.
   pageScroll.set(from,window.scrollY);
-  remember(from,currentPage());
+  // Never serialize/cache the live explorer DOM: it contains videos, posters
+  // and many buttons. Re-entering explorer uses its native page boot anyway.
+  if(from!=='/explore')remember(from,currentPage());
   if(push){rememberScroll();history.pushState({scrollY:0},'',url.href)}
   remember(target,page);
   showPage(page,url,push?scroll:(pageScroll.get(target)??scroll));
@@ -165,12 +173,20 @@ function startPrefetch(anchor){
  if(cached(key)||inflightPrefetch.has(key)||key===keyOf(new URL(location.href)))return;
  // Prefetch HTML only; image requests still obey lazy loading after insertion.
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),3500);
- const promise=fetchPage(url,controller.signal).then(page=>{remember(key,page);return page})
+ const promise=fetchPage(url,controller.signal,true).then(page=>{remember(key,page);return page})
   .catch(()=>null).finally(()=>{clearTimeout(timer);inflightPrefetch.delete(key)});
  inflightPrefetch.set(key,promise);
 }
-// First document is already server rendered: no blank client-side boot screen.
-remember(keyOf(new URL(location.href)),currentPage());
+// The explorer's live video DOM is intentionally never copied to pageCache.
+if(location.pathname!=='/explore')remember(keyOf(new URL(location.href)),currentPage());
+// Warm only the tiny Home HTML while the user watches Explore; video files
+// and product images are NOT prefetched. Respect data-saving networks.
+if(location.pathname==='/explore'){
+ setTimeout(()=>{
+  const home=document.querySelector('#mobile-bottom-nav a[data-bottom-route="home"]');
+  if(home&&document.visibilityState==='visible')startPrefetch(home);
+ },650);
+}
 updateActiveLinks(location.pathname+location.search);
 // Save position for browser reload; soft Back/Forward uses history state.
 window.addEventListener('scroll',()=>{

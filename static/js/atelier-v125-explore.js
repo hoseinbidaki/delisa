@@ -50,38 +50,62 @@ const viewer=root.querySelector('[data-explore-viewer]');
 const initial=root.querySelector('[data-explore-initial]');
 const end=root.querySelector('[data-explore-end]');
 let posts=[],loading=false,nextCursor=null,hasLoaded=false,active=-1;
-let disposed=false,scrollFrame=0,wheelLocked=false,wheelTimer=0;
+let disposed=false,mediaReleased=false,scrollFrame=0,wheelLocked=false,wheelTimer=0;
 const loadedCards=new Set();
 let feedController=null;
-function cleanupExplore(){
-  if(disposed)return;
-  disposed=true;
-  if(feedController){feedController.abort();feedController=null}
-  if(scrollFrame){cancelAnimationFrame(scrollFrame);scrollFrame=0}
-  if(wheelTimer){clearTimeout(wheelTimer);wheelTimer=0}
-  for(const card of Array.from(loadedCards))release(card);
-  active=-1;
+// Leaving is a fast, bounded action. Do NOT call video.load() synchronously
+// on the click path: cancelling/decoding media there delays native and SPA nav.
+function cleanupExplore(deep=false){
+  if(!disposed){
+    disposed=true;
+    if(feedController){feedController.abort();feedController=null}
+    if(scrollFrame){cancelAnimationFrame(scrollFrame);scrollFrame=0}
+    if(wheelTimer){clearTimeout(wheelTimer);wheelTimer=0}
+    // Two videos at most can have sources; pausing does not flush the decoder.
+    for(const card of loadedCards)card._video.pause();
+    active=-1;
+  }
+  if(deep&&!mediaReleased){
+    mediaReleased=true;
+    for(const card of Array.from(loadedCards))release(card);
+  }
 }
-// Stop video decoding/network immediately on navigation, before native page unload
-// or soft-navigation DOM replacement. Do not remove exp-mode until the DOM changes.
+function deepCleanupAfterPaint(){
+  // Let destination paint first. The browser also releases detached videos.
+  if('requestIdleCallback' in window)requestIdleCallback(()=>cleanupExplore(true),{timeout:2500});
+  else setTimeout(()=>cleanupExplore(true),500);
+}
 function navigationClick(event){
   if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.altKey||event.shiftKey)return;
   const target=event.target.closest?.('a[href],#mobile-nav-back');
   if(!target)return;
-  if(target.id==='mobile-nav-back'){cleanupExplore();return}
-  let url;try{url=new URL(target.href,location.href)}catch{return}
-  if(url.origin!==location.origin||url.pathname!==location.pathname||url.search!==location.search)cleanupExplore();
+  let leaving=target.id==='mobile-nav-back';
+  if(!leaving){
+    try{const url=new URL(target.href,location.href);
+      leaving=url.origin!==location.origin||url.pathname!==location.pathname||url.search!==location.search;
+    }catch{return}
+  }
+  if(!leaving)return;
+  cleanupExplore(false);
+  if(target.closest('#mobile-bottom-nav')&&target.id!=='mobile-cart-toggle'){
+    // Immediate visual feedback if a native account navigation needs network.
+    document.body.classList.toggle('exp-going-account',target.dataset.bottomRoute==='account');
+    document.body.classList.add('exp-route-leaving');
+  }
 }
 document.addEventListener('click',navigationClick,true);
-window.addEventListener('pagehide',cleanupExplore,{once:true});
+window.addEventListener('pagehide',()=>cleanupExplore(false),{once:true});
 window.addEventListener('pageshow',event=>{
   if(event.persisted&&disposed&&location.pathname==='/explore')location.reload();
 });
-window.addEventListener('popstate',()=>{if(location.pathname!=='/explore')cleanupExplore()});
+window.addEventListener('popstate',()=>{if(location.pathname!=='/explore')cleanupExplore(false)});
 if(pageRoot&&'MutationObserver' in window){
   const observer=new MutationObserver(()=>{
     if(!root.isConnected||!pageRoot.querySelector('[data-explore-page]')){
-      cleanupExplore();document.body.classList.remove('exp-mode');observer.disconnect();
+      cleanupExplore(false);
+      document.body.classList.remove('exp-mode','exp-route-leaving');
+      deepCleanupAfterPaint();
+      observer.disconnect();
     }
   });
   observer.observe(pageRoot,{childList:true});
