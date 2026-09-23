@@ -1,0 +1,129 @@
+/* DELISA v1.20 — one responsive visual language on desktop and mobile.
+   The original <=760px touch layout is kept; only wide screens get new rules.
+   Same real controls (no duplicated cart/account), one GPU-animated selection pill. */
+@media screen and (min-width:761px){
+ :root{--delisa-bottom-height:74px}
+ /* Keep the utility header as lean as its mobile counterpart. Cart + account
+    remain in the DOM for existing JS, but are surfaced in the bottom dock. */
+ .site-header{
+  height:69px;min-height:69px;grid-template-columns:minmax(0,1fr) auto;
+  padding-inline:clamp(22px,4vw,68px);gap:10px;
+  background:rgba(251,249,245,.86);border-color:rgba(216,209,198,.45);
+  -webkit-backdrop-filter:blur(14px) saturate(135%);backdrop-filter:blur(14px) saturate(135%);
+  box-shadow:0 3px 22px rgba(25,34,47,.045);
+ }
+ .site-header .header-right,.site-header .desktop-nav{display:none!important}
+ .site-header .brand{justify-self:start;font-size:27px;letter-spacing:4px}
+ .site-header .brand small{font-size:6px;letter-spacing:4px}
+ .site-header .header-left{gap:8px;min-width:0;justify-content:flex-end}
+ .site-header .header-left>a.desktop-account-link,
+ .site-header .header-left>a.user-link,
+ .site-header #cart-toggle{display:none!important;visibility:hidden!important}
+ .site-header #search-toggle{min-width:43px;min-height:43px;border-radius:14px;transition:background-color .22s ease,transform .32s cubic-bezier(.2,1,.32,1)}
+ .site-header #search-toggle:hover{background:rgba(223,217,209,.56);opacity:1;transform:translateY(-1px)}
+ .site-header #search-toggle:active{transform:scale(.95)}
+ .mobile-quick-nav:not(.mobile-bottom-nav){display:none!important}
+ .noticebar{height:28px;font-size:10px}
+ body{padding-bottom:114px}
+ .mobile-bottom-nav{
+  position:fixed;left:50%;right:auto;bottom:18px;transform:translateX(-50%);
+  width:min(545px,calc(100vw - 44px));height:var(--delisa-bottom-height);
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;
+  padding:7px 9px;z-index:38;isolation:isolate;overflow:hidden;
+  border:1px solid rgba(255,255,255,.74);border-radius:27px;
+  background:linear-gradient(146deg,rgba(255,255,255,.65),rgba(246,243,237,.56) 57%,rgba(255,255,255,.49));
+  box-shadow:0 8px 30px rgba(16,29,48,.12),0 22px 55px rgba(16,29,48,.08),inset 0 1px rgba(255,255,255,.9);
+  -webkit-backdrop-filter:blur(20px) saturate(155%);backdrop-filter:blur(20px) saturate(155%);
+ }
+ .mobile-bottom-nav.has-back{grid-template-columns:repeat(5,minmax(0,1fr))}
+ .mobile-bottom-nav::after{content:"";position:absolute;inset:1px 2px auto;height:49%;z-index:0;pointer-events:none;border-radius:26px 26px 50% 50%;background:linear-gradient(180deg,rgba(255,255,255,.37),transparent)}
+ .mobile-bottom-nav .delisa-glass-pill{
+  position:absolute;left:0;top:7px;bottom:7px;width:50px;z-index:1;opacity:0;pointer-events:none;
+  border-radius:19px;border:1px solid rgba(255,255,255,.77);
+  background:linear-gradient(155deg,rgba(255,255,255,.88),rgba(240,238,235,.70));
+  box-shadow:0 2px 12px rgba(20,34,54,.105),inset 0 1px 1px rgba(255,255,255,.96),inset 0 -1px rgba(28,40,58,.065);
+  transform:translate3d(0,0,0);
+ }
+ .mobile-bottom-nav .delisa-glass-pill.is-ready{transition:transform .44s cubic-bezier(.18,1.12,.28,1),width .44s cubic-bezier(.18,1.12,.28,1),opacity .18s ease}
+ .mobile-bottom-nav>a,.mobile-bottom-nav>button{
+  position:relative;z-index:2;min-width:0;max-width:100%;min-height:58px;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;
+  padding:1px 0;border:0;border-radius:19px;background:transparent!important;box-shadow:none!important;
+  color:rgba(26,39,57,.64);text-decoration:none;font:inherit;font-size:11px;line-height:1.2;white-space:nowrap;
+  cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  transition:color .24s ease,transform .30s cubic-bezier(.16,1,.3,1)!important;
+ }
+ .mobile-bottom-nav svg{width:22px;height:22px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;transition:transform .30s cubic-bezier(.18,1.25,.28,1)}
+ .mobile-bottom-nav [aria-current="page"]{color:#17263b;font-weight:600;background:transparent!important}
+ .mobile-bottom-nav>a:hover,.mobile-bottom-nav>button:hover{color:#142438;opacity:1}
+ .mobile-bottom-nav>a:hover svg,.mobile-bottom-nav>button:hover svg{transform:translate3d(0,-2px,0)}
+ .mobile-bottom-nav>a:active,.mobile-bottom-nav>button:active,
+ .mobile-bottom-nav>a.is-pressing,.mobile-bottom-nav>button.is-pressing{transform:scale(.945) translate3d(0,1px,0)!important;color:#112139!important}
+ .mobile-bottom-nav>a.is-pressing svg,.mobile-bottom-nav>button.is-pressing svg{transform:translate3d(0,-2px,0) scale(1.08)}
+ .mobile-bottom-nav>a:focus-visible,.mobile-bottom-nav>button:focus-visible{outline:2px solid #18304d;outline-offset:-3px}
+ .mobile-bottom-nav .mobile-nav-back[hidden]{display:none!important}
+ .mobile-bottom-nav .mobile-nav-back:not([hidden]){background:transparent!important;color:#17263b!important;box-shadow:none!important}
+ .mobile-bottom-nav .mobile-nav-back:not([hidden]):active{background:transparent!important}
+ .mobile-cart-count{position:absolute;top:1px;right:calc(50% - 19px);min-width:16px;height:16px;display:grid;place-items:center;padding-inline:2px;border-radius:50%;background:#17243a;color:white;font-size:9px;line-height:1}
+ /* Keep the same cart sheet interaction at desktop sizes, as a centered glass panel. */
+ #cart-drawer.drawer{
+  position:fixed!important;top:auto!important;bottom:0!important;left:50%!important;right:auto!important;
+  width:min(620px,calc(100vw - 40px))!important;max-width:none!important;
+  height:var(--delisa-sheet-height,min(67dvh,640px))!important;
+  min-height:0!important;max-height:calc(100dvh - 20px)!important;
+  display:flex!important;flex-direction:column!important;overflow:hidden!important;
+  padding:0!important;z-index:52!important;
+  border:1px solid rgba(255,255,255,.76)!important;border-bottom:0!important;
+  border-radius:30px 30px 0 0!important;
+  background:linear-gradient(166deg,rgba(252,250,247,.90),rgba(243,239,233,.95))!important;
+  -webkit-backdrop-filter:blur(19px) saturate(148%)!important;backdrop-filter:blur(19px) saturate(148%)!important;
+  box-shadow:0 -18px 66px rgba(18,30,47,.21),inset 0 1px rgba(255,255,255,.89)!important;
+  opacity:1!important;visibility:hidden!important;pointer-events:none!important;
+  transform:translate3d(-50%,105%,0)!important;transform-origin:center bottom!important;
+  transition:height .42s cubic-bezier(.22,1,.36,1),transform .47s cubic-bezier(.22,1,.36,1),visibility 0s linear .47s!important;
+ }
+ #cart-drawer.drawer.open{transform:translate3d(-50%,0,0)!important;visibility:visible!important;pointer-events:auto!important;transition:height .42s cubic-bezier(.22,1,.36,1),transform .47s cubic-bezier(.22,1,.36,1),visibility 0s!important}
+ #cart-drawer.drawer.is-dragging,#cart-drawer.drawer.is-dragging.open{transition:none!important}
+ #cart-drawer .drawer-top{position:relative;flex:0 0 auto;min-height:74px!important;padding:31px 22px 12px!important;cursor:grab;touch-action:none!important;user-select:none}
+ #cart-drawer.is-dragging .drawer-top{cursor:grabbing}
+ #cart-drawer .drawer-top::before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:48px;height:5px;border-radius:9px;background:rgba(33,43,60,.28);box-shadow:0 1px rgba(255,255,255,.72);pointer-events:none}
+ #cart-drawer .drawer-top .close{touch-action:manipulation}
+ #cart-drawer .drawer-content{flex:1 1 auto!important;min-height:0!important;max-height:none!important;overflow-y:auto!important;padding:8px 22px 13px!important;overscroll-behavior:contain}
+ #cart-drawer .drawer-foot{flex:0 0 auto!important;padding:13px 22px 20px!important}
+ #cart-drawer .drawer-foot .btn{min-height:47px}
+ body:has(#cart-drawer.open) #backdrop{background:rgba(18,27,40,.25)!important;-webkit-backdrop-filter:blur(2px)!important;backdrop-filter:blur(2px)!important}
+ .toast{bottom:calc(var(--delisa-bottom-height) + 36px)!important;max-width:min(460px,calc(100vw - 40px));left:50%;right:auto;transform:translate(-50%,12px);z-index:90}
+ .toast.show{transform:translateX(-50%)}
+ /* Wide content keeps its usable multicolumn layout, with the softer mobile feel. */
+ .container{max-width:1240px;width:calc(100% - clamp(42px,8vw,140px))}
+ .hero{width:calc(100% - clamp(42px,8vw,140px));max-width:1380px;margin:25px auto 0;border-radius:29px;isolation:isolate;min-height:min(620px,71dvh);height:min(690px,76dvh)}
+ .hero-copy{left:clamp(32px,7vw,105px)}
+ .section{padding-top:clamp(54px,6vw,85px);padding-bottom:clamp(65px,6vw,95px)}
+ .product-grid,.shop-v110 .shop-grid{gap:clamp(16px,2vw,25px)}
+ .product-image,.product-v17 .product-gallery img{border-radius:18px;overflow:hidden}
+ .product-card .product-info{padding:15px 4px 8px}
+ .category,.editorial{border-radius:24px;overflow:hidden}
+ .btn,.shop-cat-chip{border-radius:13px}
+ .btn,.account-side a,.saved-address-card,.checkout-address-option{transition:transform .27s cubic-bezier(.22,1,.36,1),box-shadow .27s ease,border-color .22s ease,background-color .22s ease}
+ .btn:active,.account-side a:active{transform:scale(.98)}
+ .checkout-v1192,.address-v1192,.account-page{padding-bottom:105px}
+ .footer{padding-bottom:26px}
+}
+@media screen and (min-width:761px) and (max-width:1030px){
+ .site-header{padding-inline:25px}
+ .hero{min-height:460px;height:min(570px,70dvh)}
+ .product-grid,.shop-v110 .shop-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media screen and (min-width:761px) and (max-width:850px){
+ .product-grid,.shop-v110 .shop-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .hero-copy{left:35px}
+}
+@media screen and (min-width:761px) and (prefers-reduced-transparency:reduce){
+ .mobile-bottom-nav,#cart-drawer.drawer,.site-header{background:#fbf9f5!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+}
+@media screen and (min-width:761px) and (prefers-reduced-motion:reduce){
+ .mobile-bottom-nav .delisa-glass-pill,.mobile-bottom-nav .delisa-glass-pill.is-ready,
+ .mobile-bottom-nav>a,.mobile-bottom-nav>button,.mobile-bottom-nav svg,
+ #cart-drawer.drawer,#cart-drawer.drawer.open,#cart-drawer.drawer.is-dragging{transition:none!important}
+}

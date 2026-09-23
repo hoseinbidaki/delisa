@@ -1,4 +1,4 @@
-/* DELISA v1.16.4 mobile UX: internal Back + three-point cart sheet; no dependencies. */
+/* DELISA v1.21 responsive UX: internal Back + three-point cart sheet; no dependencies. */
 (()=>{
 'use strict';
 const mobileNav=document.querySelector('#mobile-bottom-nav');
@@ -71,12 +71,12 @@ function mirrorCart(){
 }
 mirrorCart();
 if(cartCount&&'MutationObserver' in window){new MutationObserver(mirrorCart).observe(cartCount,{childList:true,characterData:true,subtree:true});}
-// The cart is a true three-point bottom sheet on touch devices: compact, middle,
+// The cart is a three-point bottom sheet on touch and desktop: compact, middle,
 // expanded. Dragging the top bar tracks the finger; releasing snaps to a detent.
 const sheet=document.querySelector('#cart-drawer');
 const sheetTop=sheet?.querySelector('.drawer-top');
 const cartClose=sheet?.querySelector('[data-close]');
-const mobileScreen=window.matchMedia('(max-width:760px)');
+const sheetScreen=window.matchMedia('screen');
 let sheetState='middle',gesture=null,drawFrame=0;
 function sheetStops(){
  const viewport=window.visualViewport?.height||innerHeight;
@@ -106,7 +106,7 @@ if(sheet&&sheetTop){
   const isOpen=sheet.classList.contains('open');
   if(isOpen===wasOpen)return;
   wasOpen=isOpen;
-  if(!mobileScreen.matches)return;
+  if(!sheetScreen.matches)return;
   if(isOpen){
    gesture=null;snapSheet('middle');
   }else{
@@ -114,7 +114,7 @@ if(sheet&&sheetTop){
   }
  }).observe(sheet,{attributes:true,attributeFilter:['class']});
  sheetTop.addEventListener('pointerdown',e=>{
-  if(!mobileScreen.matches||!sheet.classList.contains('open')||e.target.closest('button,a')||!e.isPrimary)return;
+  if(!sheetScreen.matches||!sheet.classList.contains('open')||e.target.closest('button,a')||!e.isPrimary)return;
   gesture={id:e.pointerId,startY:e.clientY,startHeight:sheet.getBoundingClientRect().height,lastY:e.clientY,lastTime:performance.now(),speed:0,currentHeight:sheet.getBoundingClientRect().height};
   sheet.classList.add('is-dragging');
   sheetTop.setPointerCapture(e.pointerId);
@@ -151,62 +151,154 @@ if(sheet&&sheetTop){
  }
  sheetTop.addEventListener('pointerup',e=>finishGesture(e));
  sheetTop.addEventListener('pointercancel',e=>finishGesture(e,true));
- window.addEventListener('resize',()=>{if(mobileScreen.matches&&sheet.classList.contains('open')&&!gesture)snapSheet(sheetState)},{passive:true});
- window.visualViewport?.addEventListener('resize',()=>{if(mobileScreen.matches&&sheet.classList.contains('open')&&!gesture)snapSheet(sheetState)},{passive:true});
+ window.addEventListener('resize',()=>{if(sheetScreen.matches&&sheet.classList.contains('open')&&!gesture)snapSheet(sheetState)},{passive:true});
+ window.visualViewport?.addEventListener('resize',()=>{if(sheetScreen.matches&&sheet.classList.contains('open')&&!gesture)snapSheet(sheetState)},{passive:true});
 }
-// Liquid-glass nav response: pointerdown gives immediate tactile feedback;
-// one sliding highlight follows the active destination, including SPA navigation.
+// Liquid-glass dock: touch/mouse press, hold-and-slide, release-to-select.
+// All ordinary taps remain native. A horizontal drag is the ONLY gesture that
+// captures the pointer; its release activates one destination exactly once.
 if(mobileNav){
  const navPill=document.createElement('span');
  navPill.className='delisa-glass-pill';
  navPill.setAttribute('aria-hidden','true');
  mobileNav.prepend(navPill);
- let pillFrame=0,pressed=null,pressTimer=0,temporaryUntil=0;
+ const motionOK=!window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ let pillFrame=0, pressTimer=0, gesture=null, suppressNativeClickUntil=0;
  const navItems=()=>Array.from(mobileNav.querySelectorAll(':scope > a,:scope > button')).filter(el=>!el.hidden);
  function selectedItem(){
-  if(mobileScreen.matches&&sheet?.classList.contains('open'))return smallCart;
+  if(sheet?.classList.contains('open')||location.pathname==='/checkout')return smallCart;
   return mobileNav.querySelector('[data-bottom-route][aria-current="page"]')||null;
  }
+ function metrics(item){return {left:item.offsetLeft,width:item.offsetWidth,center:item.offsetLeft+item.offsetWidth/2}}
  function movePill(item){
-  if(!item||item.hidden||!mobileScreen.matches){navPill.style.opacity='0';return}
-  const left=item.offsetLeft;
-  if(!Number.isFinite(left)||!item.offsetWidth)return;
-  navPill.style.width=item.offsetWidth+'px';
+  if(!item||item.hidden){navPill.style.opacity='0';return}
+  const {left,width}=metrics(item);
+  if(!Number.isFinite(left)||!width)return;
+  navPill.style.width=width+'px';
   navPill.style.transform='translate3d('+left+'px,0,0)';
   navPill.style.opacity='1';
   if(!navPill.classList.contains('is-ready'))requestAnimationFrame(()=>navPill.classList.add('is-ready'));
  }
  function schedulePill(){
   if(pillFrame)cancelAnimationFrame(pillFrame);
-  pillFrame=requestAnimationFrame(()=>{pillFrame=0;if(performance.now()<temporaryUntil&&pressed)return;movePill(selectedItem())});
+  pillFrame=requestAnimationFrame(()=>{
+   pillFrame=0;
+   if(gesture||pressTimer)return;
+   movePill(selectedItem());
+  });
+ }
+ function pressItem(item){
+  mobileNav.querySelectorAll(':scope > .is-pressing').forEach(el=>{
+   if(el!==item)el.classList.remove('is-pressing');
+  });
+  item?.classList.add('is-pressing');
  }
  function clearPress(){
-  clearTimeout(pressTimer);
-  if(pressed){pressed.classList.remove('is-pressing');pressed=null}
-  temporaryUntil=0;
+  clearTimeout(pressTimer);pressTimer=0;
+  pressItem(null);
   schedulePill();
+ }
+ function soonRestore(ms){
+  clearTimeout(pressTimer);
+  pressTimer=setTimeout(()=>{pressTimer=0;clearPress()},ms);
+ }
+ function nearest(x){
+  const items=navItems();
+  if(!items.length)return null;
+  const localX=x-mobileNav.getBoundingClientRect().left;
+  return items.reduce((best,el)=>Math.abs(metrics(el).center-localX)<Math.abs(metrics(best).center-localX)?el:best,items[0]);
+ }
+ function paintDrag(e){
+  const g=gesture;
+  if(!g||!g.dragging)return;
+  const next=nearest(e.clientX);
+  if(!next)return;
+  g.hovered=next;pressItem(next);
+  // Center tracks the finger between cells; ease + a tiny elastic stretch
+  // yield the floating, refracting iOS-inspired glass effect.
+  const items=navItems();
+  const first=Math.min(...items.map(el=>metrics(el).center));
+  const last=Math.max(...items.map(el=>metrics(el).center));
+  const navX=e.clientX-mobileNav.getBoundingClientRect().left;
+  const center=Math.max(first,Math.min(last,navX));
+  const velocity=Math.min(1,Math.abs(e.clientX-g.lastX)/Math.max(1,e.timeStamp-g.lastTime)/1.5);
+  const stretch=motionOK?velocity*13:0;
+  const width=metrics(next).width+stretch;
+  navPill.style.width=width+'px';
+  navPill.style.transform='translate3d('+(center-width/2)+'px,0,0)';
+  navPill.style.setProperty('--glass-glint',((center-first)/Math.max(1,last-first)*54-27).toFixed(1)+'%');
+  navPill.style.opacity='1';
+  g.lastX=e.clientX;g.lastTime=e.timeStamp;
+ }
+ function stopGesture(e,cancelled){
+  const g=gesture;
+  if(!g||e.pointerId!==g.id)return;
+  gesture=null;
+  mobileNav.classList.remove('is-dragging');
+  navPill.classList.remove('is-dragging');
+  if(g.dragging){
+   // Pointer capture retargets the browser's synthetic click to this dock.
+   // Consume that native click and explicitly click ONLY the released item.
+   suppressNativeClickUntil=performance.now()+240;
+   const chosen=cancelled?null:nearest(e.clientX);
+   if(chosen){
+    pressItem(chosen);movePill(chosen);
+    soonRestore(240);
+    setTimeout(()=>{if(chosen.isConnected&&!chosen.hidden)chosen.click()},0);
+   }else{clearPress()}
+  }else{
+   if(cancelled)clearPress();else soonRestore(175);
+  }
+  if(mobileNav.hasPointerCapture?.(g.id)){
+   try{mobileNav.releasePointerCapture(g.id)}catch{}
+  }
  }
  mobileNav.addEventListener('pointerdown',e=>{
   const item=e.target.closest('a,button');
   if(!item||item.parentElement!==mobileNav||item.hidden||e.button!==0||e.isPrimary===false)return;
-  if(pressed&&pressed!==item)pressed.classList.remove('is-pressing');
-  pressed=item;item.classList.add('is-pressing');
-  temporaryUntil=performance.now()+460;
-  movePill(item);
-  clearTimeout(pressTimer);
-  pressTimer=setTimeout(clearPress,540);
+  clearPress();
+  gesture={id:e.pointerId,startX:e.clientX,startY:e.clientY,lastX:e.clientX,lastTime:e.timeStamp,
+   origin:item,hovered:item,dragging:false};
+  pressItem(item);movePill(item);
  },{passive:true});
- mobileNav.addEventListener('pointerup',()=>{clearTimeout(pressTimer);pressTimer=setTimeout(clearPress,165)},{passive:true});
- mobileNav.addEventListener('pointercancel',clearPress,{passive:true});
- mobileNav.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')clearPress()},{passive:true});
- mobileNav.addEventListener('click',()=>{clearTimeout(pressTimer);pressTimer=setTimeout(clearPress,330)});
- mobileNav.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('a,button'))movePill(e.target)});
- // Only small attribute changes are observed: never watch styles modified by this code.
+ mobileNav.addEventListener('pointermove',e=>{
+  const g=gesture;
+  if(!g||e.pointerId!==g.id)return;
+  if(!g.dragging){
+   const dx=e.clientX-g.startX,dy=e.clientY-g.startY;
+   if(Math.abs(dy)>24&&Math.abs(dx)<9){stopGesture(e,true);return}
+   if(Math.abs(dx)<(e.pointerType==='mouse'?5:9))return;
+   g.dragging=true;
+   mobileNav.classList.add('is-dragging');
+   navPill.classList.add('is-dragging');
+   try{mobileNav.setPointerCapture(e.pointerId)}catch{}
+  }
+  paintDrag(e);
+  if(e.cancelable)e.preventDefault();
+ },{passive:false});
+ mobileNav.addEventListener('pointerup',e=>stopGesture(e,false));
+ mobileNav.addEventListener('pointercancel',e=>stopGesture(e,true));
+ mobileNav.addEventListener('lostpointercapture',e=>{
+  if(e.target===mobileNav&&gesture?.id===e.pointerId)stopGesture(e,true);
+ });
+ mobileNav.addEventListener('click',e=>{
+  // isTrusted distinguishes the native post-drag click from our .click().
+  if(e.isTrusted&&performance.now()<suppressNativeClickUntil){
+   e.preventDefault();e.stopImmediatePropagation();return;
+  }
+  if(e.target.closest('a,button'))soonRestore(190);
+ },true);
+ mobileNav.addEventListener('dragstart',e=>e.preventDefault());
+ mobileNav.addEventListener('keydown',e=>{
+  if((e.key==='Enter'||e.key===' ')&&e.target.matches('a,button'))movePill(e.target);
+ });
+ // Deliberately ignore style changes by this code to prevent feedback loops.
  new MutationObserver(schedulePill).observe(mobileNav,{subtree:true,attributes:true,attributeFilter:['aria-current','hidden','class']});
  if(sheet)new MutationObserver(schedulePill).observe(sheet,{attributes:true,attributeFilter:['class']});
  window.addEventListener('popstate',()=>requestAnimationFrame(schedulePill));
  window.addEventListener('pageshow',schedulePill);
  window.addEventListener('resize',schedulePill,{passive:true});
+ window.visualViewport?.addEventListener('resize',schedulePill,{passive:true});
  if('ResizeObserver'in window)new ResizeObserver(schedulePill).observe(mobileNav);
  if(main)new MutationObserver(schedulePill).observe(main,{attributes:true,attributeFilter:['data-page-path']});
  schedulePill();

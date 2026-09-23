@@ -1,0 +1,42 @@
+/* DELISA v1.21 — real hold-and-drag glass selection on both mobile and desktop.
+   Piggybacks on the existing dock: no new fonts, libraries, or network calls. */
+@media screen{
+ .mobile-bottom-nav{ -webkit-user-select:none;user-select:none }
+ .mobile-bottom-nav>a,.mobile-bottom-nav>button{
+  touch-action:none!important;-webkit-touch-callout:none;
+ }
+ .mobile-bottom-nav .delisa-glass-pill{
+  overflow:hidden;
+  will-change:transform,width;
+  border-color:rgba(255,255,255,.91);
+  background:linear-gradient(153deg,rgba(255,255,255,.88) 0%,rgba(251,250,248,.75) 40%,rgba(230,230,230,.62) 100%);
+  box-shadow:0 5px 20px rgba(18,31,51,.13),0 1px 4px rgba(23,34,50,.065),inset 0 1px 1px rgba(255,255,255,.99),inset 0 -1px 1px rgba(41,52,70,.075);
+ }
+ .mobile-bottom-nav .delisa-glass-pill::before{
+  content:"";position:absolute;inset:1px 1px 42%;border-radius:inherit;
+  background:linear-gradient(178deg,rgba(255,255,255,.56),rgba(255,255,255,0));pointer-events:none;
+ }
+ .mobile-bottom-nav .delisa-glass-pill::after{
+  content:"";position:absolute;top:-70%;bottom:-70%;left:21%;width:26%;
+  transform:skewX(-23deg) translateX(var(--glass-glint,0%));
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.47),transparent);
+  filter:blur(7px);pointer-events:none;
+ }
+ .mobile-bottom-nav .delisa-glass-pill.is-ready{
+  transition:transform .49s cubic-bezier(.18,1.04,.25,1),width .45s cubic-bezier(.2,1,.27,1),opacity .17s ease;
+ }
+ .mobile-bottom-nav .delisa-glass-pill.is-dragging{
+  transition:transform .075s linear,width .11s cubic-bezier(.1,.5,.2,1),opacity .12s ease!important;
+  box-shadow:0 7px 22px rgba(18,31,51,.17),0 1px 5px rgba(23,34,50,.10),inset 0 1px 1px rgba(255,255,255,.99),inset 0 -1px 1px rgba(41,52,70,.075);
+ }
+ .mobile-bottom-nav.is-dragging>a,.mobile-bottom-nav.is-dragging>button{
+  transition:color .12s ease,transform .18s cubic-bezier(.2,1.2,.3,1)!important;
+ }
+ .mobile-bottom-nav.is-dragging{cursor:grabbing}
+ .mobile-bottom-nav.is-dragging .is-pressing{color:#122039!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .mobile-bottom-nav .delisa-glass-pill.is-ready,
+ .mobile-bottom-nav .delisa-glass-pill.is-dragging,
+ .mobile-bottom-nav.is-dragging>a,.mobile-bottom-nav.is-dragging>button{transition:none!important}
+}
