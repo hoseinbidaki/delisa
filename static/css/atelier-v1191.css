@@ -1,0 +1,12 @@
+/* DELISA 1.19.1 — address submission clarity, no dependencies */
+.address-form-feedback,.address-form-alert{margin:0 0 18px;padding:13px 16px;border-radius:13px;background:#fff0eb;border:1px solid #eac7b8;color:#813d30;font-size:13px;line-height:2}
+.address-form-feedback[hidden]{display:none!important}
+.address-form-v119 [aria-invalid="true"]{border-color:#b65e4b!important;box-shadow:0 0 0 3px rgba(182,94,75,.12)!important}
+.address-form-v119 .address-field-error{display:block;margin-top:5px;font-size:12px;line-height:1.8;color:#a14938}
+.address-form-v119 #address-save-button{position:relative;transition:transform .18s ease,background-color .18s ease,opacity .18s ease}
+.address-form-v119 #address-save-button:active{transform:scale(.975)}
+.address-form-v119 #address-save-button.is-address-saving{opacity:.82;pointer-events:none}
+.address-form-v119 #address-save-button.is-address-saving::after{content:"";display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-left-color:transparent;border-radius:50%;margin-inline-start:9px;animation:delisaAddressSpin .7s linear infinite}
+@keyframes delisaAddressSpin{to{transform:rotate(360deg)}}
+.address-save-success{margin:16px 0 0;padding:13px 17px;border-radius:13px;background:#eaf4ed;border:1px solid #badac7;color:#285d3b;font-size:13px}
+@media(prefers-reduced-motion:reduce){.address-form-v119 #address-save-button,.address-form-v119 #address-save-button::after{animation:none!important;transition:none!important}}

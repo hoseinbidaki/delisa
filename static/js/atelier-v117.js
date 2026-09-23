@@ -1,0 +1,7 @@
+/* DELISA 1.18 — checkout saved addresses only; address editor logic in atelier-v118.js */
+(()=>{'use strict';
+function initCheckoutAddresses(){const options=[...document.querySelectorAll('.checkout-address-option input')],manual=document.querySelector('.checkout-manual-address');if(!options.length)return;const fields={full_name:'recipient',phone:'phone',city:'city',address:'address',postal_code:'postal_code'};function sync(input){if(!input?.checked)return;let data={};try{data=JSON.parse(input.dataset.addressJson||'{}')}catch{};Object.entries(fields).forEach(([name,key])=>{const el=document.querySelector(`[name="${name}"]`);if(el&&data[key]!=null)el.value=data[key]});manual?.classList.add('is-muted')}options.forEach(o=>o.addEventListener('change',()=>sync(o)));sync(options.find(o=>o.checked));document.querySelectorAll('.checkout-manual-address input,.checkout-manual-address textarea').forEach(el=>el.addEventListener('focus',()=>{options.forEach(o=>o.checked=false);manual?.classList.remove('is-muted')}))}
+function initConfirm(){document.querySelectorAll('form[data-confirm]:not([data-confirm-bound])').forEach(f=>{f.dataset.confirmBound='1';f.addEventListener('submit',e=>{if(!confirm(f.dataset.confirm||'مطمئنی؟'))e.preventDefault()})})}
+function boot(){initCheckoutAddresses();initConfirm()}
+document.addEventListener('DOMContentLoaded',boot);document.addEventListener('delisa:pagechange',boot);
+})();

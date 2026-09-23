@@ -1,0 +1,54 @@
+/* DELISA v1.19 | Account navigation + manual address editor. No map SDK / JS. */
+.account-page-v118 .account-layout-grid{align-items:start}
+.account-page-v118 .account-main-flow{min-width:0}
+.account-side-v119{display:flex;flex-direction:column;gap:4px;padding:15px;border-radius:22px}
+.account-side-v119 .account-side-label{font-size:12px;color:#7b766f;padding:12px 14px 15px;letter-spacing:.02em}
+.account-side-v119>a{display:grid;grid-template-columns:38px minmax(0,1fr) 15px;align-items:center;gap:11px;padding:12px 13px;border:1px solid transparent;border-radius:15px;background:transparent;transition:background-color .22s ease,transform .22s cubic-bezier(.2,.8,.2,1),border-color .22s ease,color .22s ease}
+.account-side-v119>a::after{display:none}
+.account-side-v119>a:hover,.account-side-v119>a:focus-visible{background:rgba(255,255,255,.8);border-color:rgba(24,38,57,.12);transform:translateX(-2px)}
+.account-side-v119>a:active{transform:scale(.985)}
+.account-side-v119>a>span:nth-child(2){font-size:13px;font-weight:500;display:grid;gap:1px}
+.account-side-v119>a small{font-size:11px;font-weight:400;color:#82786b}
+.account-side-v119 .account-side-ico{display:grid;place-items:center;width:36px;height:36px;font-size:20px;color:#263954;background:rgba(244,239,231,.85);border:1px solid rgba(22,36,55,.06);border-radius:12px}
+.account-side-v119 .account-side-arrow{font-size:15px;color:#80786c;opacity:0;transform:translateX(4px);transition:opacity .22s,transform .22s}
+.account-side-v119>a:hover .account-side-arrow,.account-side-v119>a:focus-visible .account-side-arrow{opacity:1;transform:none}
+.account-side-v119 .account-side-separator{height:1px;background:rgba(22,36,55,.08);margin:5px 12px}
+.address-v119 .address-head-v118,.address-head-v119{padding:16px 0 6px}
+.address-v119 .address-head-v118>.btn{border-radius:14px;min-height:48px;padding:12px 22px;box-shadow:0 8px 28px rgba(20,33,53,.10);transition:transform .22s ease,box-shadow .22s ease}
+.address-v119 .address-head-v118>.btn:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(20,33,53,.16)}
+.address-v119 .saved-address-card{border-radius:19px;background:linear-gradient(140deg,#fffdfa,#f7f3ed);border:1px solid #e9e3db;box-shadow:0 8px 32px rgba(17,29,45,.045);transition:transform .22s ease,box-shadow .22s ease}
+.address-v119 .saved-address-card:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(17,29,45,.09)}
+.address-v119 .saved-address-actions{display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+.address-v119 .saved-address-actions>*{margin:0}
+.address-v119 .saved-address-actions .small-link{padding:9px 13px;min-height:39px;border-radius:10px;border:1px solid #e9e1d7;background:rgba(255,255,255,.8);text-decoration:none;transition:background-color .2s ease,border-color .2s ease}
+.address-v119 .saved-address-actions .small-link:hover{background:#ede8df;border-color:#d9cebe}
+.address-v119 .saved-address-actions .danger-link{color:#a04b45}
+.address-v119 .address-empty-v118{border-radius:24px;padding:55px 20px}
+.address-editor-v119{padding-bottom:90px}
+.address-editor-v119 .address-head-v119 h1{margin:5px 0 0}
+.address-editor-shell-v119{display:grid;grid-template-columns:minmax(230px,.65fr) minmax(0,1fr);gap:0;overflow:hidden;max-width:1060px;margin:20px auto 0;border-radius:26px;border:1px solid #e8e1d8;box-shadow:0 18px 60px rgba(16,29,45,.07);background:#fffdf9}
+.address-editor-intro-v119{position:relative;overflow:hidden;background:linear-gradient(152deg,#e8e2d7 0%,#f5f0e7 57%,#ede3d5 100%);padding:43px 30px;color:#1c2a40;min-height:540px;display:flex;flex-direction:column;gap:24px}
+.address-editor-intro-v119>span{font:12px Georgia,serif;letter-spacing:.20em}
+.address-editor-intro-v119 strong{font-weight:500;font-size:clamp(23px,2.5vw,35px);line-height:1.85;position:relative;z-index:1}
+.address-editor-intro-v119 p{color:#82766a;position:relative;z-index:1;font-size:14px}
+.address-editor-watermark{position:absolute;bottom:-70px;left:-20px;font:330px/1 Georgia,serif;color:rgba(24,38,58,.065);pointer-events:none;user-select:none}
+.address-form-v119{max-width:none!important;margin:0!important;padding:clamp(23px,4vw,45px)!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:#fffdf9!important;backdrop-filter:none!important}
+.address-form-v119 .address-form-head-v119 h2{margin:5px 0;font-size:clamp(23px,3vw,31px);font-weight:600;color:#1b2b43}
+.address-form-v119 .address-form-head-v119 p{margin:0;color:#7d7469;font-size:13px}
+.address-form-v119 .address-form-section-v119{padding:26px 0;border-bottom:1px solid #ece7df}
+.address-form-v119 .address-form-section-v119 h3{font-size:14px;font-weight:600;color:#24364d;margin:0 0 17px}
+.address-form-v119 label{display:grid;gap:8px;color:#4d4b46;font-size:13px;line-height:1.9;min-width:0}
+.address-form-v119 :is(input:not([type=checkbox]),select,textarea){width:100%;min-width:0;font:inherit;font-size:16px;line-height:1.5;background:#faf8f4;border:1px solid #e5ded4;border-radius:12px;min-height:47px;padding:12px 14px;color:#192b43;outline:none;transition:border-color .2s,background-color .2s,box-shadow .2s;box-sizing:border-box}
+.address-form-v119 textarea{resize:vertical;min-height:112px}
+.address-form-v119 :is(input:not([type=checkbox]),select,textarea):focus{border-color:#8095a9;background:#fff;box-shadow:0 0 0 3px rgba(43,78,112,.07)}
+.address-form-v119 :is(input:not([type=checkbox]),select,textarea)::placeholder{color:#a99d8e}
+.address-form-v119 .form-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.address-form-v119 .address-default-choice-v119{display:flex;align-items:center;gap:10px;padding:21px 0}
+.address-form-v119 .address-default-choice-v119 input{accent-color:#172a42;width:17px;height:17px}
+.address-form-footer-v119{display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-top:9px}
+.address-form-footer-v119>.btn{display:inline-flex;align-items:center;justify-content:center;gap:16px;min-height:49px;border-radius:12px;transition:transform .22s ease,box-shadow .22s ease}
+.address-form-footer-v119>.btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(17,33,55,.15)}
+@media(max-width:950px){.address-editor-shell-v119{grid-template-columns:1fr}.address-editor-intro-v119{min-height:155px;padding:25px 26px;gap:8px}.address-editor-intro-v119 strong{font-size:23px;line-height:1.5}.address-editor-watermark{font-size:180px;bottom:-62px}}
+@media(max-width:860px){.account-side-v119{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.account-side-v119 .account-side-label,.account-side-v119 .account-side-separator{grid-column:1/-1}.account-side-v119>a{min-width:0;padding:11px 10px;gap:8px;grid-template-columns:32px minmax(0,1fr) 0}.account-side-v119 .account-side-ico{width:32px;height:32px;font-size:17px}.account-side-v119 .account-side-arrow{display:none}}
+@media(max-width:550px){.account-side-v119{padding:10px}.account-side-v119>a>span:nth-child(2){font-size:12px}.address-editor-shell-v119{border-radius:20px;margin:14px auto 0}.address-form-v119{padding:22px 18px!important}.address-form-v119 .form-row{grid-template-columns:1fr}.address-editor-intro-v119{min-height:120px}.address-editor-intro-v119 p{display:none}.address-form-v119 .address-form-section-v119{padding:21px 0}.address-editor-v119{padding-bottom:calc(95px + env(safe-area-inset-bottom))}}
+@media(prefers-reduced-motion:reduce){.account-side-v119>a,.account-side-v119 .account-side-arrow,.address-v119 .saved-address-card,.address-form-v119 :is(input,select,textarea),.address-form-footer-v119 .btn{transition:none!important}}

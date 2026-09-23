@@ -1,1 +1,42 @@
-<section class="container checkout-page checkout-experience"><nav class="breadcrumb" aria-label="مسیر صفحه"><a href="/shop" data-nav>فروشگاه</a> / ثبت سفارش</nav><div class="checkout-heading"><span class="eyebrow ink">YOUR ORDER</span><h1>تکمیل سفارش</h1><div class="checkout-steps" aria-label="مراحل ثبت سفارش"><span>۰۱ / سبد خرید</span><i aria-hidden="true"></i><span class="current">۰۲ / اطلاعات ارسال</span><i aria-hidden="true"></i><span>۰۳ / ثبت سفارش</span></div><p class="notice demo-notice"><strong>نسخه آزمایشی</strong> — درگاه پرداخت هنوز متصل نیست؛ ثبت این سفارش هیچ پرداختی انجام نمی‌دهد.</p></div><div class="checkout-grid"><form method="post" action="/checkout" class="form panel checkout-form"><input type="hidden" name="csrf" value="$csrf"><div class="checkout-panel-header"><span class="eyebrow ink">01 / SHIPPING DETAILS</span><h2>مشخصات گیرنده</h2><p class="muted">اطلاعات ارسال سفارش را وارد کن.</p></div><div class="form-row"><label>نام و نام خانوادگی<input name="full_name" value="$name" required maxlength="100" autocomplete="name" placeholder="نام گیرنده"></label><label>شماره موبایل<input name="phone" value="$phone" dir="ltr" inputmode="tel" autocomplete="tel" required placeholder="09123456789" pattern="(\+98|0)?9[0-9]{9}"></label></div><label>شهر<input name="city" required maxlength="80" autocomplete="address-level2" placeholder="شهر محل تحویل"></label><label>آدرس کامل<textarea name="address" rows="3" required minlength="8" maxlength="350" autocomplete="street-address" placeholder="خیابان، کوچه، پلاک و واحد"></textarea></label><div class="form-row"><label>کد پستی <small class="field-help">اختیاری</small><input name="postal_code" dir="ltr" inputmode="numeric" maxlength="25" autocomplete="postal-code" placeholder="کد پستی"></label><label>یادداشت سفارش <small class="field-help">اختیاری</small><input name="note" maxlength="300" placeholder="توضیحات تکمیلی"></label></div><div class="checkout-coupon"><label for="coupon-code">کد تخفیف <small class="field-help">اختیاری</small></label><div class="coupon-entry"><input id="coupon-code" name="coupon_code" dir="ltr" maxlength="24" autocomplete="off" placeholder="CODE" aria-describedby="coupon-feedback"><button type="button" id="coupon-apply" class="btn outline">اعمال کد</button></div><p id="coupon-feedback" role="status" aria-live="polite" class="muted tiny">کد در مرحله ثبت سفارش دوباره بررسی می‌شود.</p></div><button class="btn checkout-submit" type="submit">ثبت سفارش آزمایشی ←</button><p class="muted tiny checkout-disclaimer">ارسال و پرداخت واقعی در این نسخه فعال نیست؛ هیچ وجهی دریافت نمی‌شود.</p></form><aside class="panel order-summary"><div class="checkout-panel-header"><span class="eyebrow ink">02 / YOUR BAG</span><h2>خلاصه سفارش</h2></div><div class="order-summary-items">$items</div><div class="summary-line"><span>جمع محصولات</span><strong id="coupon-subtotal">$total</strong></div><div class="summary-line coupon-savings" id="coupon-savings" hidden><span>تخفیف</span><strong id="coupon-discount">—</strong></div><div class="summary-line total"><span>مبلغ نهایی</span><strong id="coupon-total">$total</strong></div><p class="muted tiny">هزینه ارسال و پرداخت آنلاین در این دمو محاسبه نشده است.</p><a href="/shop" data-nav class="underlined">ادامه دیدن محصولات ←</a></aside></div></section>
+<section class="container checkout-page checkout-experience checkout-v117 checkout-v1192">
+ <nav class="breadcrumb" aria-label="مسیر صفحه"><a href="/shop" data-nav>فروشگاه</a> / تکمیل سفارش</nav>
+ <header class="checkout-heading checkout-heading-v1192">
+   <span class="eyebrow ink">DELISA / CHECKOUT</span><h1>تکمیل سفارش</h1>
+   <p>آدرس تحویل و کد تخفیف را بررسی کن؛ خلاصه خرید هم کنارت می‌ماند.</p>
+   <div class="checkout-steps" aria-label="مراحل خرید"><span>۰۱ / سبد</span><i aria-hidden="true"></i><span class="current">۰۲ / اطلاعات تحویل</span><i aria-hidden="true"></i><span>۰۳ / ثبت</span></div>
+   <p class="notice demo-notice">نسخه آزمایشی دلیسا؛ پرداخت بانکی و هزینه ارسال هنوز فعال نیست.</p>
+ </header>
+ <div class="checkout-grid checkout-grid-v1192">
+  <form method="post" action="/checkout" class="form panel checkout-address-form checkout-form checkout-main-v1192" id="delisa-checkout">
+    <input type="hidden" name="csrf" value="$csrf">
+    <div class="checkout-panel-header"><span class="eyebrow ink">01 / DELIVERY</span><h2>آدرس تحویل</h2><p class="muted">می‌تونی از آدرس‌های ذخیره‌شده استفاده کنی یا آدرس جدید بنویسی.</p></div>
+    <div class="checkout-saved-wrap-v1192">$saved_addresses</div>
+    <label class="checkout-manual-switch-v1192" for="checkout-manual-option"><input id="checkout-manual-option" type="radio" name="saved_address_id" value=""><span>استفاده از آدرس جدید برای این سفارش</span><span aria-hidden="true">＋</span></label>
+    <section class="checkout-manual-address" id="checkout-manual-fields">
+      <div class="checkout-subhead-v1192"><span class="eyebrow ink">DELIVERY DETAILS</span><h3>مشخصات گیرنده</h3></div>
+      <div class="form-row"><label>نام و نام خانوادگی<input name="full_name" value="$name" required maxlength="100" autocomplete="name" placeholder="نام گیرنده"></label><label>شماره تماس<input name="phone" value="$phone" dir="ltr" inputmode="tel" required maxlength="30" autocomplete="tel" placeholder="09123456789"></label></div>
+      <label>شهر<input name="city" required maxlength="80" autocomplete="address-level2" placeholder="نام شهر"></label>
+      <label>نشانی کامل<textarea name="address" rows="3" required minlength="8" maxlength="350" autocomplete="street-address" placeholder="خیابان، کوچه، پلاک، طبقه و واحد"></textarea></label>
+      <label>کد پستی <small class="field-help">اختیاری</small><input name="postal_code" dir="ltr" inputmode="numeric" maxlength="25" autocomplete="postal-code" placeholder="کد پستی"></label>
+    </section>
+    <label class="checkout-note-v1192">یادداشت سفارش <small class="field-help">اختیاری</small><textarea name="note" rows="2" maxlength="300" placeholder="اگر نکته‌ای برای ارسال سفارش داری، اینجا بنویس."></textarea></label>
+    <section class="checkout-coupon checkout-coupon-v1192" aria-labelledby="coupon-title">
+       <div class="checkout-subhead-v1192"><span class="eyebrow ink">02 / PROMO CODE</span><h3 id="coupon-title">کد تخفیف داری؟</h3><p class="muted">اگر کد داری، قبل از ثبت سفارش امتحانش کن.</p></div>
+       <label class="coupon-label-v1192" for="coupon-code">کد تخفیف</label>
+       <div class="coupon-entry"><input id="coupon-code" name="coupon_code" dir="ltr" maxlength="24" autocomplete="off" placeholder="DELISA10" aria-describedby="coupon-feedback"><button type="button" id="coupon-apply" class="btn" aria-label="بررسی کد تخفیف">بررسی کد <span aria-hidden="true">←</span></button></div>
+       <p id="coupon-feedback" class="coupon-feedback-v1192 muted tiny" role="status" aria-live="polite">کد معتبر باشد، جمع سفارش همین‌جا به‌روزرسانی می‌شود.</p>
+    </section>
+    <button class="btn checkout-submit checkout-submit-v1192" type="submit">ثبت سفارش آزمایشی <span aria-hidden="true">←</span></button>
+    <p class="muted tiny checkout-disclaimer">مبلغ نهایی دوباره در پایتون بررسی می‌شود؛ ثبت این سفارش پرداخت واقعی نیست.</p>
+  </form>
+  <aside class="panel order-summary checkout-summary-v1192">
+    <div class="checkout-panel-header"><span class="eyebrow ink">YOUR BAG</span><h2>خلاصه خرید</h2></div>
+    <div class="order-summary-items">$items</div>
+    <div class="summary-line"><span>جمع محصولات</span><strong id="coupon-subtotal">$total</strong></div>
+    <div class="summary-line coupon-savings" id="coupon-savings" hidden><span>تخفیف کد</span><strong id="coupon-discount">—</strong></div>
+    <div class="summary-line total"><span>مبلغ نهایی</span><strong id="coupon-total">$total</strong></div>
+    <p class="muted tiny">هزینه ارسال و پرداخت بانکی در نسخه آزمایشی محاسبه نشده‌اند.</p>
+    <a href="/shop" data-nav class="underlined">ادامه دیدن محصولات ←</a>
+  </aside>
+ </div>
+</section>

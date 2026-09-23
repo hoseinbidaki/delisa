@@ -61,6 +61,42 @@ def today():
     return dt.datetime.now(dt.timezone.utc).date().isoformat()
 
 
+def gregorian_to_jalali(gy, gm, gd):
+    """Convert Gregorian date to Solar Hijri without third-party dependencies."""
+    g_days = [0,31,59,90,120,151,181,212,243,273,304,334]
+    gy2 = gy + 1 if gm > 2 else gy
+    days = 355666 + (365 * gy) + ((gy2 + 3)//4) - ((gy2 + 99)//100) + ((gy2 + 399)//400) + gd + g_days[gm-1]
+    jy = -1595 + (33 * (days // 12053)); days %= 12053
+    jy += 4 * (days // 1461); days %= 1461
+    if days > 365:
+        jy += (days - 1) // 365
+        days = (days - 1) % 365
+    if days < 186:
+        jm = 1 + days // 31
+        jd = 1 + days % 31
+    else:
+        jm = 7 + (days - 186) // 30
+        jd = 1 + (days - 186) % 30
+    return jy, jm, jd
+
+
+def jalali_date(value, with_time=False):
+    """Render stored ISO Gregorian date/time in Persian Solar Hijri."""
+    if not value:
+        return ''
+    try:
+        raw = str(value).replace('Z','+00:00')
+        parsed = dt.datetime.fromisoformat(raw)
+        gy, gm, gd = parsed.year, parsed.month, parsed.day
+        jy, jm, jd = gregorian_to_jalali(gy,gm,gd)
+        out = f'{jy:04d}/{jm:02d}/{jd:02d}'
+        if with_time and ('T' in raw or ' ' in raw):
+            out += f' · {parsed.hour:02d}:{parsed.minute:02d}'
+        return out.translate(str.maketrans('0123456789','۰۱۲۳۴۵۶۷۸۹'))
+    except (ValueError, TypeError):
+        return esc(value)
+
+
 def db_connect():
     DATA.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB, timeout=15)
@@ -113,6 +149,13 @@ def init_db():
             created_day TEXT NOT NULL, created_at TEXT NOT NULL);
         CREATE INDEX IF NOT EXISTS idx_page_views_date ON page_views(created_day);
         CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
+        CREATE TABLE IF NOT EXISTS addresses (
+            id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            title TEXT NOT NULL DEFAULT 'خانه', recipient TEXT NOT NULL, phone TEXT NOT NULL,
+            province TEXT NOT NULL, city TEXT NOT NULL, address TEXT NOT NULL,
+            postal_code TEXT NOT NULL DEFAULT '', latitude REAL, longitude REAL,
+            is_default INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+        CREATE INDEX IF NOT EXISTS idx_addresses_user ON addresses(user_id,is_default,id);
         CREATE INDEX IF NOT EXISTS idx_products_active ON products(active,category);
         CREATE TABLE IF NOT EXISTS coupons (
             id INTEGER PRIMARY KEY,
@@ -550,6 +593,19 @@ def register_page(sess,error=''):
     return layout(read_template('register.html',error=f'<div class="alert">{esc(error)}</div>' if error else '',csrf=esc(sess['csrf'])),'عضویت | دلیسا',sess,'/register')
 
 
+def address_card(address, csrf):
+    default = '<span class="address-default">پیش‌فرض</span>' if address['is_default'] else ''
+    actions = f'<a class="small-link" href="/account/addresses/{address["id"]}/edit">ویرایش آدرس</a>'
+    if not address['is_default']:
+        actions += f'<form method="post" action="/account/addresses/{address["id"]}/default"><input type="hidden" name="csrf" value="{esc(csrf)}"><button class="small-link">انتخاب به‌عنوان پیش‌فرض</button></form>'
+    actions += f'<form method="post" action="/account/addresses/{address["id"]}/delete" data-confirm="این آدرس حذف شود؟"><input type="hidden" name="csrf" value="{esc(csrf)}"><button class="small-link danger-link">حذف</button></form>'
+    return f'''<article class="saved-address-card" data-address-id="{address['id']}">
+      <div class="saved-address-top"><div><span class="eyebrow ink">{esc(address['title'])}</span><strong>{esc(address['recipient'])}</strong></div>{default}</div>
+      <p>{esc(address['province'])}، {esc(address['city'])} · {esc(address['address'])}</p>
+      <div class="saved-address-meta"><span dir="ltr">{esc(address['phone'])}</span><span>{esc(address['postal_code']) or 'بدون کد پستی'}</span></div>
+      <div class="saved-address-actions">{actions}</div>
+    </article>'''
+
 def account_page(conn,sess):
     require_user(sess)
     orders = conn.execute('SELECT * FROM orders WHERE user_id=? ORDER BY id DESC LIMIT 100',(sess['uid'],)).fetchall()
@@ -557,29 +613,51 @@ def account_page(conn,sess):
     total_spent = sum(int(o['total']) for o in orders)
     favorites_rows = conn.execute('SELECT p.* FROM favorites f JOIN products p ON p.id=f.product_id WHERE f.user_id=? AND p.active=1 ORDER BY p.id DESC',(sess['uid'],)).fetchall()
     favorite_count = len(favorites_rows)
+    addresses = conn.execute('SELECT * FROM addresses WHERE user_id=? ORDER BY is_default DESC,id DESC',(sess['uid'],)).fetchall()
     order_cards = []
     for o in orders:
         items = conn.execute('SELECT oi.product_name,oi.quantity,oi.color,p.image FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id WHERE oi.order_id=? ORDER BY oi.id',(o['id'],)).fetchall()
         thumbs = ''.join(f'<img src="{esc(i["image"] or "/static/img/vest.svg")}" alt="{esc(i["product_name"])}" loading="lazy" decoding="async" width="64" height="80">' for i in items[:4])
         line_names = ' · '.join(esc(i['product_name']) + (f' ({esc(i["color"])})' if i['color'] else '') for i in items[:2])
-        if len(items) > 2:
-            line_names += ' …'
+        if len(items) > 2: line_names += ' …'
         item_count = sum(int(i['quantity']) for i in items)
-        order_cards.append(f'''<a class="order-showcase-card" href="/account/orders/{o['id']}" data-nav>
-            <div class="order-showcase-media">
-                <div class="bundle-stack">{thumbs or '<span class="bundle-empty">DELISA</span>'}</div>
-                <div class="bundle-meta"><strong>{item_count}</strong><span>قلم</span></div>
-            </div>
-            <div class="order-showcase-body">
-                <div class="order-meta-top"><span class="eyebrow ink">ORDER #{o['id']}</span><span>{esc(o['created_at'][:10])}</span></div>
-                <strong>سفارش #{o['id']}</strong>
-                <p>{line_names or 'بدون جزئیات ثبت شده'}</p>
-                <div class="order-meta-bottom"><span class="pill status-{esc(o['status'])}">{STATUS.get(o['status'],'نامشخص')}</span><b>{money(o['total'])}</b></div>
-            </div>
-        </a>''')
+        order_cards.append(f'''<a class="order-showcase-card" href="/account/orders/{o['id']}" data-nav><div class="order-showcase-media"><div class="bundle-stack">{thumbs or '<span class="bundle-empty">DELISA</span>'}</div><div class="bundle-meta"><strong>{item_count}</strong><span>قلم</span></div></div><div class="order-showcase-body"><div class="order-meta-top"><span class="eyebrow ink">ORDER #{o['id']}</span><span>{jalali_date(o['created_at'])}</span></div><strong>سفارش #{o['id']}</strong><p>{line_names or 'بدون جزئیات ثبت شده'}</p><div class="order-meta-bottom"><span class="pill status-{esc(o['status'])}">{STATUS.get(o['status'],'نامشخص')}</span><b>{money(o['total'])}</b></div></div></a>''')
     cards = ''.join(order_cards) or '<div class="empty-card"><strong>هنوز سفارشی ثبت نکرده‌ای.</strong><p class="muted">اولین خریدت از دلیسا همین‌جا نمایش داده می‌شود.</p><a href="/shop" data-nav class="btn btn-light">کشف محصولات</a></div>'
-    body = read_template('account.html', name=esc(sess['name']), email=esc(sess['email']), csrf=esc(sess['csrf']), order_count=esc(order_count), total_spent=money(total_spent), favorite_count=esc(favorite_count), orders=cards, favorites=''.join(product_card(p) for p in favorites_rows) or '<div class="empty-card"><strong>هنوز چیزی ذخیره نکرده‌ای.</strong><p class="muted">محصولات موردعلاقه‌ات را برای بعد نگه دار.</p></div>')
+    body = read_template('account.html', name=esc(sess['name']), email=esc(sess['email']), csrf=esc(sess['csrf']), order_count=esc(order_count), total_spent=money(total_spent), favorite_count=esc(favorite_count), address_count=esc(len(addresses)), orders=cards, favorites=''.join(product_card(p) for p in favorites_rows) or '<div class="empty-card"><strong>هنوز چیزی ذخیره نکرده‌ای.</strong><p class="muted">محصولات موردعلاقه‌ات را برای بعد نگه دار.</p></div>')
     return layout(body,'حساب من | دلیسا',sess,'/account')
+
+
+PROVINCES_V118 = ('آذربایجان شرقی','آذربایجان غربی','اردبیل','اصفهان','البرز','ایلام','بوشهر','تهران','چهارمحال و بختیاری','خراسان جنوبی','خراسان رضوی','خراسان شمالی','خوزستان','زنجان','سمنان','سیستان و بلوچستان','فارس','قزوین','قم','کردستان','کرمان','کرمانشاه','کهگیلویه و بویراحمد','گلستان','گیلان','لرستان','مازندران','مرکزی','هرمزگان','همدان','یزد')
+
+
+def account_addresses(conn,sess,saved=False):
+    require_user(sess)
+    rows = conn.execute('SELECT * FROM addresses WHERE user_id=? ORDER BY is_default DESC,id DESC',(sess['uid'],)).fetchall()
+    cards = ''.join(address_card(a,sess['csrf']) for a in rows) or '<div class="address-empty-v118"><span class="address-empty-symbol">⌖</span><h2>هنوز آدرسی ثبت نکرده‌ای</h2><p>با ذخیره آدرس، خریدهای بعدی بدون وارد کردن دوباره مشخصات سریع‌تر می‌شن.</p><a class="btn" href="/account/addresses/new">افزودن اولین آدرس ←</a></div>'
+    page = read_template('addresses.html', address_count=money(len(rows)).replace(' تومان',''), addresses=cards)
+    if saved:
+        page = '<div class="container"><div class="address-save-success" role="status">✓ آدرس با موفقیت ذخیره شد.</div></div>' + page
+    return layout(page,'آدرس‌های من | دلیسا',sess,'/account/addresses')
+
+
+def account_security(sess,updated=False):
+    require_user(sess)
+    notice = '<div class="alert success-v118">رمز عبور تغییر کرد و از نشست‌های دیگر خارج شدی.</div>' if updated else ''
+    page = read_template('security.html',csrf=esc(sess['csrf']),notice=notice)
+    return layout(page,'امنیت حساب | دلیسا',sess,'/account/security')
+
+
+def address_editor(conn,sess,address_id=None,form_values=None,error=''):
+    require_user(sess)
+    row = conn.execute('SELECT * FROM addresses WHERE id=? AND user_id=?',(address_id,sess['uid'])).fetchone() if address_id else None
+    if address_id and not row:raise HTTPError(404,'آدرس پیدا نشد.')
+    d=dict(form_values) if form_values is not None else (dict(row) if row else {})
+    province_select = '<option value="">استان را انتخاب کن</option>' + ''.join('<option value="'+esc(p)+'"'+(' selected' if p==d.get('province') else '')+'>'+esc(p)+'</option>' for p in PROVINCES_V118)
+    if d.get('province') and d['province'] not in PROVINCES_V118:
+        province_select += '<option selected value="'+esc(d['province'])+'">'+esc(d['province'])+'</option>'
+    form_action='/account/addresses/'+str(address_id)+'/edit' if row else '/account/addresses'
+    page=read_template('address_editor.html',csrf=esc(sess['csrf']),title=esc(d.get('title') or ''),recipient=esc(d.get('recipient') or sess['name']),phone=esc(d.get('phone') or sess.get('phone') or ''),province_options=province_select,city=esc(d.get('city') or ''),address=esc(d.get('address') or ''),postal_code=esc(d.get('postal_code') or ''),default_checked='checked' if d.get('is_default') and str(d.get('is_default'))!='0' else '',form_action=form_action,save_label='ذخیره تغییرات' if row else 'ذخیره آدرس',editor_title='ویرایش آدرس' if row else 'آدرس جدید',form_error='<div class="address-form-alert" role="alert">'+esc(error)+'</div>' if error else '')
+    return layout(page,'ویرایش آدرس | دلیسا' if row else 'آدرس جدید | دلیسا',sess,'/account/addresses/'+str(address_id)+'/edit' if row else '/account/addresses/new')
 
 
 def order_detail(conn,sess,order_id):
@@ -601,7 +679,10 @@ def checkout_page(conn,sess):
     cart=cart_data(conn,sess)
     if not cart['items']:return redirect('/shop')
     items=''.join(f'<div class="summary-line"><span>{esc(i["name"])}{" · " + esc(i["color"]) if i["color"] else ""} × {i["qty"]}</span><strong>{money(i["price"]*i["qty"])}</strong></div>' for i in cart['items'])
-    body=read_template('checkout.html',csrf=esc(sess['csrf']),items=items,total=money(cart['total']),name=esc(sess['name']),phone=esc(sess['phone'] or ''))
+    addresses=conn.execute('SELECT * FROM addresses WHERE user_id=? ORDER BY is_default DESC,id DESC',(sess['uid'],)).fetchall()
+    saved=''.join(f'''<label class="checkout-address-option"><input type="radio" name="saved_address_id" value="{a['id']}" {'checked' if a['is_default'] else ''} data-address-json="{esc(json.dumps(dict(a),ensure_ascii=False))}"><span><strong>{esc(a['title'])}</strong><small>{esc(a['province'])}، {esc(a['city'])} · {esc(a['address'])}</small></span></label>''' for a in addresses)
+    saved_addresses=f'<section class="saved-checkout-addresses"><div class="checkout-block-head"><div><span class="eyebrow ink">SAVED ADDRESSES</span><h2>آدرس‌های ذخیره‌شده</h2></div><a href="/account/addresses" class="small-link">مدیریت آدرس‌ها</a></div>{saved}</section>' if addresses else '<p class="muted">آدرس ذخیره‌شده‌ای نداری؛ می‌تونی <a href="/account/addresses/new">آدرس جدید ذخیره کنی</a> یا مشخصات زیر رو یک‌بار وارد کنی.</p>'
+    body=read_template('checkout.html',csrf=esc(sess['csrf']),items=items,total=money(cart['total']),name=esc(sess['name']),phone=esc(sess['phone'] or ''),saved_addresses=saved_addresses)
     return layout(body,'ثبت سفارش آزمایشی | دلیسا',sess,'/checkout')
 
 
@@ -659,7 +740,7 @@ def admin_accounting(conn,sess):
     coupon_rows = conn.execute('SELECT code,kind,value,used_count FROM coupons ORDER BY used_count DESC, id DESC LIMIT 8').fetchall()
     coupon_html = ''.join(f'<div class="summary-line"><span><code dir="ltr">{esc(r["code"])} </code></span><strong>{r["used_count"]} بار</strong></div>' for r in coupon_rows) or '<p class="muted">کد تخفیفی ندارید.</p>'
     recent = conn.execute('SELECT id,full_name,total,status,created_at FROM orders ORDER BY id DESC LIMIT 8').fetchall()
-    recent_html = ''.join(f'<tr><td>#{r["id"]}</td><td>{esc(r["full_name"] )}</td><td>{money(r["total"] )}</td><td>{esc(STATUS.get(r["status"],r["status"]))}</td><td>{esc(r["created_at"][:10])}</td></tr>' for r in recent)
+    recent_html = ''.join(f'<tr><td>#{r["id"]}</td><td>{esc(r["full_name"] )}</td><td>{money(r["total"] )}</td><td>{esc(STATUS.get(r["status"],r["status"]))}</td><td>{jalali_date(r['created_at'])}</td></tr>' for r in recent)
     body=f'''<section class="stats stats-pro accounting-kpis"><article class="stat stat-pro"><small>فروش کل</small><strong>{money(total_revenue)}</strong><span>بدون سفارش‌های لغوشده</span></article><article class="stat stat-pro"><small>تخفیف اعطا شده</small><strong>{money(total_discounts)}</strong><span>محصول + کد تخفیف</span></article><article class="stat stat-pro"><small>درآمد خالص تقریبی</small><strong>{money(max(total_revenue-total_discounts,0))}</strong><span>قبل از هزینه‌ها</span></article><article class="stat stat-pro"><small>تعداد شهرهای فعال</small><strong>{len(shipping_cities)}</strong><span>بر اساس سفارش‌های ثبت‌شده</span></article></section><div class="admin-columns admin-columns-pro"><section class="panel glass-panel"><h2>گردش فروش ۳۰ روز اخیر</h2>{daily_html}</section><section class="panel glass-panel"><h2>فروش به تفکیک شهر</h2>{city_html}</section></div><div class="admin-columns admin-columns-pro admin-columns-3"><section class="panel glass-panel"><h2>محصولات درآمدساز</h2>{top_products_html}</section><section class="panel glass-panel"><h2>کدهای تخفیف فعال</h2>{coupon_html}</section><section class="panel glass-panel"><h2>نکات حسابداری</h2><div class="summary-line"><span>اتصال درگاه</span><strong>فعال نیست</strong></div><div class="summary-line"><span>نوع فروش</span><strong>آزمایشی / دمو</strong></div><div class="summary-line"><span>تسویه</span><strong>دستی</strong></div><p class="muted tiny">این بخش برای تحلیل فروش و مدیریت داخلی آماده شده و تا پیش از اتصال درگاه، جنبه عملیاتی کامل ندارد.</p></section></div><section class="panel glass-panel"><h2>آخرین سفارش‌ها</h2><div class="table-wrap"><table><thead><tr><th>سفارش</th><th>مشتری</th><th>مبلغ</th><th>وضعیت</th><th>تاریخ</th></tr></thead><tbody>{recent_html}</tbody></table></div></section>'''
     return admin_layout(body,'حسابداری و تحلیل فروش',sess)
 
@@ -702,7 +783,7 @@ def admin_coupons(conn,sess):
         discount = (str(c['value']) + '٪') if c['kind'] == 'percent' else money(c['value'])
         used = str(c['used_count']) + (' / ' + str(c['max_uses']) if c['max_uses'] else ' / نامحدود')
         is_active = bool(c['active'])
-        details += f'''<tr><td><code dir="ltr">{esc(c['code'])}</code></td><td>{esc(discount)}</td><td>{money(c['min_total'])}</td><td>{esc(used)}</td><td>{esc(c['expires_on']) or 'بدون تاریخ'}</td><td>{'فعال' if is_active else 'غیرفعال'}</td><td><form method="post" action="/admin/coupons/{c['id']}/toggle"><input type="hidden" name="csrf" value="{esc(sess['csrf'])}"><button type="submit" class="small-link">{'غیرفعال کن' if is_active else 'فعال کن'}</button></form></td></tr>'''
+        details += f'''<tr><td><code dir="ltr">{esc(c['code'])}</code></td><td>{esc(discount)}</td><td>{money(c['min_total'])}</td><td>{esc(used)}</td><td>{jalali_date(c['expires_on']) if c['expires_on'] else 'بدون تاریخ'}</td><td>{'فعال' if is_active else 'غیرفعال'}</td><td><form method="post" action="/admin/coupons/{c['id']}/toggle"><input type="hidden" name="csrf" value="{esc(sess['csrf'])}"><button type="submit" class="small-link">{'غیرفعال کن' if is_active else 'فعال کن'}</button></form></td></tr>'''
     listing = '<div class="table-wrap"><table><thead><tr><th>کد</th><th>میزان</th><th>حداقل خرید</th><th>استفاده</th><th>انقضا</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>' + details + '</tbody></table></div>' if rows else '<p class="muted">هنوز کدی ساخته نشده است.</p>'
     form = f'''<section class="panel coupon-admin-panel"><h2>ساخت کد تخفیف</h2><p class="muted">کد از ۳ تا ۲۴ کاراکتر انگلیسی، عدد، خط تیره یا زیرخط تشکیل شود. درصد باید بین ۱ تا ۹۰ باشد. کد فقط هنگام ثبت سفارش معتبر می‌شود.</p><form class="form" method="post" action="/admin/coupons/new"><input name="csrf" type="hidden" value="{esc(sess['csrf'])}"><div class="form-row"><label>کد (انگلیسی)<input name="code" required dir="ltr" pattern="[A-Za-z0-9_-]{{3,24}}" placeholder="DELISA10" maxlength="24"></label><label>نوع تخفیف<select name="kind"><option value="percent">درصدی</option><option value="fixed">مبلغ ثابت (تومان)</option></select></label><label>مقدار<input name="value" type="number" min="1" required placeholder="10"></label></div><div class="form-row"><label>حداقل سبد (تومان)<input name="min_total" type="number" min="0" value="0"></label><label>حداکثر دفعات استفاده (صفر = نامحدود)<input name="max_uses" type="number" min="0" value="0"></label><label>تاریخ پایان (اختیاری)<input name="expires_on" type="date"></label></div><button class="btn" type="submit">ساخت کد تخفیف</button></form></section>'''
     return admin_layout(form + listing,'کدهای تخفیف',sess)
@@ -714,7 +795,7 @@ def admin_orders(conn,sess):
     body='''<p class="notice">نسخه آزمایشی: پرداخت اینترنتی انجام نمی‌شود و هیچ وجهی دریافت نمی‌گردد.</p><div class="table-wrap"><table><thead><tr><th>سفارش</th><th>مشتری</th><th>شهر</th><th>اقلام</th><th>مبلغ</th><th>تاریخ</th><th>وضعیت</th></tr></thead><tbody>'''
     for o in rows:
         count=conn.execute('SELECT COALESCE(SUM(quantity),0) FROM order_items WHERE order_id=?',(o['id'],)).fetchone()[0]
-        body+=f'''<tr><td><a class="small-link" href="/account/orders/{o['id']}">#{o['id']}</a></td><td>{esc(o['full_name'])}<br><small>{esc(o['phone'])}</small></td><td>{esc(o['city'])}</td><td>{count}</td><td>{money(o['total'])}</td><td>{esc(o['created_at'][:10])}</td><td><form method="post" action="/admin/orders/{o['id']}/status" class="status-form"><input type="hidden" name="csrf" value="{esc(sess['csrf'])}"><select name="status">{opts(o['status'])}</select><button class="small-link">ثبت</button></form></td></tr>'''
+        body+=f'''<tr><td><a class="small-link" href="/account/orders/{o['id']}">#{o['id']}</a></td><td>{esc(o['full_name'])}<br><small>{esc(o['phone'])}</small></td><td>{esc(o['city'])}</td><td>{count}</td><td>{money(o['total'])}</td><td>{jalali_date(o['created_at'])}</td><td><form method="post" action="/admin/orders/{o['id']}/status" class="status-form"><input type="hidden" name="csrf" value="{esc(sess['csrf'])}"><select name="status">{opts(o['status'])}</select><button class="small-link">ثبت</button></form></td></tr>'''
     body+='</tbody></table></div>'
     return admin_layout(body,'سفارش‌ها',sess)
 
@@ -742,6 +823,11 @@ def main_handler(req,conn,sess):
         if p=='/login':return login_page(sess)
         if p=='/register':return register_page(sess)
         if p=='/account':return account_page(conn,sess) if sess.get('uid') else redirect('/login')
+        if p=='/account/addresses':return account_addresses(conn,sess,req.query.get('saved')=='1') if sess.get('uid') else redirect('/login')
+        if p=='/account/addresses/new':return address_editor(conn,sess) if sess.get('uid') else redirect('/login')
+        if p=='/account/security':return account_security(sess,req.query.get('updated')=='1') if sess.get('uid') else redirect('/login')
+        address_match=re.fullmatch(r'/account/addresses/(\d+)/edit',p)
+        if address_match:return address_editor(conn,sess,int(address_match[1])) if sess.get('uid') else redirect('/login')
         if p=='/checkout':return checkout_page(conn,sess) if sess.get('uid') else redirect('/login')
         match=re.fullmatch(r'/account/orders/(\d+)',p)
         if match:return order_detail(conn,sess,int(match[1])) if sess.get('uid') else redirect('/login')
@@ -839,13 +925,74 @@ def main_handler(req,conn,sess):
             if found:conn.execute('DELETE FROM favorites WHERE user_id=? AND product_id=?',(sess['uid'],pid))
             else:conn.execute('INSERT INTO favorites(user_id,product_id) VALUES(?,?)',(sess['uid'],pid))
         return json_response({'saved':not bool(found)})
+    if m=='POST' and p=='/account/password':
+        require_user(sess); require_csrf(req,sess)
+        current=str(req.value('current_password',''))
+        new_password=str(req.value('new_password',''))
+        confirm=str(req.value('confirm_password',''))
+        user=conn.execute('SELECT password_hash FROM users WHERE id=?',(sess['uid'],)).fetchone()
+        if not user or not verify_password(current,user['password_hash']): raise HTTPError(400,'رمز عبور فعلی درست نیست.')
+        if len(new_password)<8: raise HTTPError(400,'رمز عبور جدید باید حداقل ۸ کاراکتر باشد.')
+        if new_password!=confirm: raise HTTPError(400,'تکرار رمز عبور جدید یکسان نیست.')
+        with conn:
+            conn.execute('UPDATE users SET password_hash=? WHERE id=?',(password_hash(new_password),sess['uid']))
+            conn.execute('DELETE FROM sessions WHERE user_id=? AND id_hash!=?',(sess['uid'],sess['id_hash']))
+        return redirect('/account/security?updated=1')
+    edit_match=re.fullmatch(r'/account/addresses/(\d+)/edit',p) if m=='POST' else None
+    if m=='POST' and (p=='/account/addresses' or edit_match):
+        require_user(sess); require_csrf(req,sess)
+        editing = conn.execute('SELECT * FROM addresses WHERE id=? AND user_id=?',(int(edit_match[1]),sess['uid'])).fetchone() if edit_match else None
+        if edit_match and not editing:raise HTTPError(404,'آدرس پیدا نشد.')
+        title=str(req.value('title','خانه')).strip()[:40] or 'خانه'
+        recipient=str(req.value('recipient',sess['name'])).strip()[:100]
+        phone=str(req.value('phone',sess.get('phone',''))).strip()[:30]
+        phone=phone.translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩','01234567890123456789'))
+        phone=re.sub(r'[\s\-\u200c]','',phone)
+        province=str(req.value('province','')).strip()[:60]
+        city=str(req.value('city','')).strip()[:80]
+        address=str(req.value('address','')).strip()[:350]
+        postal_code=str(req.value('postal_code','')).strip()[:25]
+        if not recipient or not re.fullmatch(r'(?:\+98|0)?9[0-9]{9}',phone) or not province or not city or len(address)<8:
+            return address_editor(conn,sess,int(edit_match[1]) if edit_match else None,form_values=req.form,error='نام گیرنده، موبایل معتبر، استان، شهر و نشانی حداقل ۸ کاراکتری را بررسی کن.')
+        is_default=1 if req.value('is_default','')=='1' else 0
+        with conn:
+            exists=conn.execute('SELECT 1 FROM addresses WHERE user_id=? LIMIT 1',(sess['uid'],)).fetchone()
+            if is_default or not exists or (editing and editing['is_default']):
+                conn.execute('UPDATE addresses SET is_default=0 WHERE user_id=?',(sess['uid'],))
+                is_default=1
+            if editing:
+                conn.execute("UPDATE addresses SET title=?,recipient=?,phone=?,province=?,city=?,address=?,postal_code=?,latitude=?,longitude=?,is_default=?,updated_at=? WHERE id=? AND user_id=?",(title,recipient,phone,province,city,address,postal_code,None,None,is_default,now(),editing['id'],sess['uid']))
+            else:
+                conn.execute("INSERT INTO addresses(user_id,title,recipient,phone,province,city,address,postal_code,latitude,longitude,is_default,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",(sess['uid'],title,recipient,phone,province,city,address,postal_code,None,None,is_default,now(),now()))
+        return redirect('/account/addresses?saved=1')
+    maddr=re.fullmatch(r'/account/addresses/(\d+)/(default|delete)',p) if m=='POST' else None
+    if maddr:
+        require_user(sess); require_csrf(req,sess)
+        aid=int(maddr[1]); action=maddr[2]
+        target=conn.execute('SELECT * FROM addresses WHERE id=? AND user_id=?',(aid,sess['uid'])).fetchone()
+        if not target: raise HTTPError(404,'آدرس پیدا نشد.')
+        with conn:
+            if action=='default':
+                conn.execute('UPDATE addresses SET is_default=0 WHERE user_id=?',(sess['uid'],))
+                conn.execute('UPDATE addresses SET is_default=1,updated_at=? WHERE id=?',(now(),aid))
+            else:
+                was_default=target['is_default']; conn.execute('DELETE FROM addresses WHERE id=?',(aid,))
+                if was_default:
+                    replacement=conn.execute('SELECT id FROM addresses WHERE user_id=? ORDER BY id DESC LIMIT 1',(sess['uid'],)).fetchone()
+                    if replacement: conn.execute('UPDATE addresses SET is_default=1 WHERE id=?',(replacement['id'],))
+        return redirect('/account/addresses')
     if m=='POST' and p=='/checkout':
         require_user(sess)
-        full_name=str(req.value('full_name')).strip()[:100]
-        phone=str(req.value('phone')).strip()[:30]
-        city=str(req.value('city')).strip()[:80]
-        address=str(req.value('address')).strip()[:350]
-        postal_code=str(req.value('postal_code')).strip()[:25]
+        require_csrf(req,sess)
+        saved_address_id=str(req.value('saved_address_id','')).strip()
+        saved_address=None
+        if saved_address_id.isdigit():
+            saved_address=conn.execute('SELECT * FROM addresses WHERE id=? AND user_id=?',(int(saved_address_id),sess['uid'])).fetchone()
+        full_name=(str(saved_address['recipient']) if saved_address else str(req.value('full_name'))).strip()[:100]
+        phone=(str(saved_address['phone']) if saved_address else str(req.value('phone'))).strip()[:30]
+        city=(str(saved_address['city']) if saved_address else str(req.value('city'))).strip()[:80]
+        address=(str(saved_address['address']) if saved_address else str(req.value('address'))).strip()[:350]
+        postal_code=(str(saved_address['postal_code']) if saved_address else str(req.value('postal_code'))).strip()[:25]
         note=str(req.value('note')).strip()[:300]
         entered_code=str(req.value('coupon_code','')).strip()
         if not full_name or not re.fullmatch(r'(?:\+98|0)?9\d{9}',phone) or len(city)<2 or len(address)<8:
@@ -1021,7 +1168,7 @@ def static_response(path):
     return Response(file.read_bytes(),200,content_type,[('Cache-Control','public, max-age=86400'),('X-Content-Type-Options','nosniff')])
 
 
-STATUSES={200:'OK',303:'See Other',400:'Bad Request',401:'Unauthorized',403:'Forbidden',404:'Not Found',405:'Method Not Allowed',409:'Conflict',413:'Content Too Large',429:'Too Many Requests',500:'Internal Server Error'}
+STATUSES={200:'OK',303:'See Other',400:'Bad Request',401:'Unauthorized',403:'Forbidden',404:'Not Found',405:'Method Not Allowed',409:'Conflict',413:'Content Too Large',429:'Too Many Requests',500:'Internal Server Error',502:'Bad Gateway',503:'Service Unavailable'}
 
 
 def application(environ,start_response):

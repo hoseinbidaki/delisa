@@ -1,0 +1,56 @@
+/* DELISA v1.18 — separate account screens + lightweight Neshan address wizard. */
+.account-actions-v118{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.account-action-v118{display:flex;align-items:center;gap:15px;min-width:0;padding:21px;border-radius:23px;background:linear-gradient(145deg,rgba(255,255,255,.76),rgba(243,237,228,.8));border:1px solid rgba(27,37,52,.095);box-shadow:0 12px 35px rgba(24,35,48,.055);text-decoration:none;color:#172338;transition:transform .23s cubic-bezier(.22,1,.36,1),box-shadow .23s ease,border-color .23s ease}
+.account-action-v118:hover{transform:translateY(-3px);border-color:rgba(23,35,56,.25);box-shadow:0 20px 50px rgba(23,35,56,.11)}
+.account-action-v118:active{transform:scale(.985)}
+.account-action-v118>span:nth-child(2){display:grid;gap:3px;min-width:0}
+.account-action-v118 small{font-size:10px;letter-spacing:.17em;font-family:Georgia,serif;color:#9d8d78}
+.account-action-v118 strong{font-size:clamp(1.05rem,2vw,1.34rem);font-weight:600}
+.account-action-v118 em{font-style:normal;color:#756d61;font-size:.85rem}
+.action-icon-v118{width:49px;height:49px;border-radius:16px;display:grid;place-items:center;background:#eae4db;font-size:1.75rem;flex:0 0 auto}
+.action-arrow-v118{margin-inline-start:auto;font-size:22px;color:#9b8f80}
+.address-v118,.address-editor-v118,.security-v118{padding-top:24px;padding-bottom:90px}
+.address-head-v118{display:flex;justify-content:space-between;gap:24px;align-items:end;margin:18px 0 24px}
+.address-head-v118 h1,.security-v118 h1{font-size:clamp(1.9rem,4.4vw,3rem);margin:.25em 0}
+.address-head-v118 p,.security-card-v118 p{line-height:2;margin-bottom:0}
+.address-count-v118{font-size:.9rem;color:#776d61;margin:0 0 14px}
+.address-grid-v118{align-items:stretch}
+.address-grid-v118>.address-empty-v118{grid-column:1/-1}
+.address-empty-v118{padding:48px 24px;border:1px solid #e6dfd5;background:linear-gradient(120deg,#faf8f4,#f0ebe3);border-radius:28px;text-align:center}
+.address-empty-v118 h2{font-size:clamp(1.2rem,3vw,1.55rem)}
+.address-empty-v118 p{line-height:2;color:#7f7466}
+.address-empty-symbol{font-size:42px;color:#233450}
+.address-empty-v118 .btn{margin-top:15px}
+.address-back-v118{display:inline-block;margin:25px 0}
+.security-card-v118{max-width:660px;margin:22px auto 0;padding:clamp(24px,4vw,46px);border-radius:28px;background:linear-gradient(150deg,rgba(255,255,255,.8),rgba(241,236,228,.85));border:1px solid #e7e0d8;box-shadow:0 18px 50px rgba(18,35,54,.07)}
+.security-card-v118 .password-form{margin:23px 0;max-width:none;background:none;border:none;box-shadow:none;backdrop-filter:none;padding:0}
+.success-v118{background:#e4f0e7;color:#254432}
+.address-wizard-v118{max-width:1020px;margin:0 auto;border-radius:28px;background:linear-gradient(150deg,rgba(255,255,255,.8),rgba(241,236,228,.88));border:1px solid rgba(23,35,56,.09);box-shadow:0 22px 65px rgba(24,35,48,.08);padding:clamp(16px,3.5vw,34px)}
+.address-steps-v118{display:flex;gap:15px;padding-bottom:18px;margin-bottom:20px;border-bottom:1px solid #e7e0d7}
+.address-steps-v118 span{padding:9px 13px;border-radius:999px;background:#eae6df;color:#8e8375;font-size:.82rem;transition:background .25s,color .25s}
+.address-steps-v118 span.is-active{background:#18283f;color:white}
+.address-step-v118[hidden]{display:none!important}
+.wizard-intro-v118 h2{font-size:clamp(1.45rem,3.6vw,2.15rem);margin:.35em 0}
+.wizard-intro-v118 p{color:#70665a;line-height:2;margin:0 0 18px}
+.map-frame-v118{position:relative;height:clamp(350px,48vw,510px);overflow:hidden;border-radius:23px;background:#e8e8e0;border:1px solid #e0d9cf;isolation:isolate}
+.map-v118{height:100%;width:100%;background:linear-gradient(135deg,#e9e6df,#dedfd9)}
+.map-pin-v118{position:absolute;z-index:4;left:50%;top:50%;transform:translate(-50%,-100%);pointer-events:none;filter:drop-shadow(0 5px 8px rgba(7,23,40,.22))}
+.map-pin-v118 span{display:block;width:26px;height:26px;border:6px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#18283f;box-shadow:0 0 0 2px #18283f}
+.map-state-v118{position:absolute;bottom:17px;left:17px;right:17px;z-index:7;width:max-content;max-width:calc(100% - 34px);border:1px solid rgba(255,255,255,.7);border-radius:13px;background:rgba(255,255,255,.86);backdrop-filter:blur(7px);padding:10px 13px;font-size:.82rem;pointer-events:none}
+.map-state-v118.is-error{color:#964546}
+.map-me-v118{position:absolute;top:15px;left:15px;z-index:8;padding:11px 13px;background:rgba(255,255,255,.9);border:1px solid rgba(23,35,56,.1);border-radius:14px;color:#19283b;box-shadow:0 8px 24px rgba(18,35,54,.08)}
+.map-location-v118{margin:13px 0;color:#3e4957;font-weight:500;line-height:2}
+.wizard-actions-v118{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:18px 0}
+.wizard-actions-v118 .btn:disabled{opacity:.5;cursor:not-allowed}
+.neshan-unavailable-v118{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:28px;text-align:center;background:linear-gradient(145deg,#f5f2ed,#e6e0d6);color:#26374c}
+.neshan-unavailable-v118 strong{font-size:1.26rem}
+.neshan-unavailable-v118 p{line-height:2;max-width:440px}
+.neshan-unavailable-v118 span{color:#877a68}
+#address-fields-step .address-form{max-width:720px;margin:0 auto}
+#address-fields-step label{line-height:2}
+#address-fields-step input,#address-fields-step select,#address-fields-step textarea{font-size:16px;max-width:100%}
+@media(max-width:780px){.account-actions-v118{grid-template-columns:1fr}.address-head-v118{align-items:start;flex-direction:column}.address-wizard-v118{border-radius:20px}.map-frame-v118{height:min(57vh,490px)}.security-card-v118{margin-top:14px}}
+@media(max-width:480px){.account-action-v118{padding:15px;border-radius:18px;gap:11px}.action-icon-v118{width:44px;height:44px;border-radius:13px}.address-v118,.address-editor-v118,.security-v118{padding-bottom:calc(110px + env(safe-area-inset-bottom))}.map-frame-v118{height:min(53vh,405px);border-radius:17px}.map-state-v118{font-size:.72rem}.address-steps-v118{gap:6px;justify-content:space-between}.address-steps-v118 span{font-size:.71rem;padding:9px 8px}}
+@media(prefers-reduced-motion:reduce){.account-action-v118,.address-steps-v118 span{transition:none}}
+
+.address-editor-v118.map-failed-v118 .map-pin-v118,.address-editor-v118.map-failed-v118 .map-me-v118{display:none}

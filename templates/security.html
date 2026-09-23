@@ -1,0 +1,6 @@
+<section class="container security-v118"><div class="breadcrumb"><a href="/account">حساب من</a> / امنیت حساب</div><div class="security-card-v118"><span class="eyebrow ink">ACCOUNT SECURITY</span><h1>تغییر رمز عبور</h1><p class="muted">برای امنیت بیشتر، رمز فعلی را وارد کن و یک رمز جدید با حداقل هشت کاراکتر انتخاب کن.</p>$notice
+<form method="post" action="/account/password" class="form password-form"><input type="hidden" name="csrf" value="$csrf">
+<label>رمز فعلی<input name="current_password" type="password" autocomplete="current-password" required></label>
+<label>رمز جدید<input name="new_password" type="password" minlength="8" autocomplete="new-password" required></label>
+<label>تکرار رمز جدید<input name="confirm_password" type="password" minlength="8" autocomplete="new-password" required></label>
+<button type="submit" class="btn">ذخیره رمز جدید</button></form><a href="/account" class="underlined">بازگشت به حساب ←</a></div></section>

@@ -1,0 +1,29 @@
+<section class="container address-editor-v118 address-editor-v119 address-editor-v1192">
+  <div class="breadcrumb"><a href="/account">حساب من</a> / <a href="/account/addresses">آدرس‌ها</a> / $editor_title</div>
+  <div class="address-head-v118 address-head-v119 address-head-v1192">
+    <div><span class="eyebrow ink">DELISA / DELIVERY DETAILS</span><h1>$editor_title</h1><p class="muted">اطلاعات تحویل دقیق‌تر یعنی خرید راحت‌تر؛ بدون نقشه و فقط با چند فیلد ساده.</p></div>
+    <a href="/account/addresses" class="underlined">بازگشت به آدرس‌ها ←</a>
+  </div>
+  <div class="address-editor-shell-v119 address-editor-shell-v1192">
+    <div class="address-editor-intro-v119 address-editor-intro-v1192" aria-hidden="true"><span>DELiSA / 01</span><strong>خانه، محل کار؛<br>هر جایی که دوست داری.</strong><p>آدرس دقیق، تحویل آسوده‌تر.</p><div class="address-editor-watermark">D.</div></div>
+    <form id="address-form" class="form address-form address-form-v119 address-form-v1192" method="post" action="$form_action" novalidate>
+      <input type="hidden" name="csrf" value="$csrf">
+      <div class="address-form-feedback" role="alert" aria-live="polite" hidden></div>
+      $form_error
+      <div class="address-form-head-v119"><span class="eyebrow ink">DELIVERY / ADDRESS</span><h2>جزئیات نشانی</h2><p>فقط اطلاعات ضروری رو وارد کن؛ بعدها هم می‌تونی ویرایششون کنی.</p></div>
+      <div class="address-form-section-v119"><h3><span class="address-step-n-v1192">۰۱</span> نام این آدرس</h3>
+        <label>عنوان آدرس <input name="title" maxlength="40" value="$title" placeholder="مثلاً خانه، محل کار یا هدیه" autocomplete="off"></label>
+      </div>
+      <div class="address-form-section-v119"><h3><span class="address-step-n-v1192">۰۲</span> گیرنده</h3>
+        <div class="form-row"><label>نام و نام خانوادگی گیرنده *<input name="recipient" value="$recipient" required maxlength="100" autocomplete="name" placeholder="نام گیرنده"></label><label>شماره تماس *<input name="phone" value="$phone" dir="ltr" inputmode="tel" autocomplete="tel" required maxlength="30" placeholder="09123456789"></label></div>
+      </div>
+      <div class="address-form-section-v119"><h3><span class="address-step-n-v1192">۰۳</span> نشانی پستی</h3>
+        <div class="form-row"><label>استان *<select name="province" required autocomplete="address-level1">$province_options</select></label><label>شهر *<input name="city" value="$city" required maxlength="80" autocomplete="address-level2" placeholder="نام شهر"></label></div>
+        <label>نشانی دقیق *<textarea name="address" rows="4" maxlength="350" minlength="8" required autocomplete="street-address" placeholder="محله، خیابان، کوچه، پلاک، طبقه و واحد">$address</textarea></label>
+        <label>کد پستی <input name="postal_code" value="$postal_code" inputmode="numeric" maxlength="25" autocomplete="postal-code" placeholder="کد پستی ۱۰ رقمی (اختیاری)"></label>
+      </div>
+      <label class="checkbox address-default-choice-v119"><input type="checkbox" name="is_default" value="1" $default_checked> آدرس پیش‌فرض من باشد</label>
+      <div class="address-form-footer-v119"><button class="btn" type="submit" id="address-save-button">$save_label <span aria-hidden="true">←</span></button><a href="/account/addresses" class="underlined">انصراف</a></div>
+    </form>
+  </div>
+</section>
