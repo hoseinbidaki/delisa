@@ -1,0 +1,43 @@
+/* DELISA v1.26 — Cart actions and unobtrusive top toast on phones. */
+#cart-drawer .drawer-foot .dl-cart-checkout{
+  width:100%;border-radius:15px;font-weight:600;letter-spacing:0;
+}
+#cart-drawer .drawer-foot .dl-cart-continue{
+  display:flex;width:100%;justify-content:center;align-items:center;
+  min-height:45px;margin-top:10px;padding:10px 18px;border-radius:15px;
+  border:1px solid rgba(28,43,65,.19)!important;
+  background:rgba(255,255,255,.58)!important;color:#1c2b41!important;
+  font-size:13px;font-weight:500;line-height:1.7;font-family:inherit;box-shadow:none!important;
+  cursor:pointer;transition:background .24s ease,border-color .24s ease,transform .24s ease;
+}
+#cart-drawer .drawer-foot .dl-cart-continue:hover{
+  background:#f0ece5!important;border-color:rgba(28,43,65,.35)!important;
+}
+#cart-drawer .drawer-foot .dl-cart-continue:active{transform:scale(.985)}
+#cart-drawer .drawer-foot .dl-cart-continue:focus-visible,
+#cart-drawer .drawer-foot .dl-cart-checkout:focus-visible{
+  outline:2px solid #1e3557;outline-offset:3px;
+}
+@media(max-width:760px){
+  /* Do not cover the floating navigation or the cart sheet. */
+  #toast.toast{
+    position:fixed!important;
+    top:calc(env(safe-area-inset-top,0px) + 15px)!important;
+    bottom:auto!important;left:50%!important;right:auto!important;
+    width:max-content;max-width:calc(100vw - 30px)!important;
+    margin:0!important;padding:12px 18px!important;
+    box-sizing:border-box;
+    text-align:center;border-radius:15px;
+    background:#1e2b3f;color:#fff;
+    box-shadow:0 14px 38px rgba(17,29,44,.19);
+    transform:translate3d(-50%,-14px,0)!important;
+    transition:opacity .26s ease,transform .32s cubic-bezier(.2,.8,.25,1)!important;
+    pointer-events:none!important;z-index:1000!important;
+  }
+  #toast.toast.show{transform:translate3d(-50%,0,0)!important}
+  #cart-drawer .drawer-foot .dl-cart-checkout{min-height:46px}
+  #cart-drawer .drawer-foot .dl-cart-continue{min-height:43px;margin-top:8px}
+}
+@media(prefers-reduced-motion:reduce){
+  #cart-drawer .drawer-foot .dl-cart-continue,#toast.toast{transition:none!important}
+}

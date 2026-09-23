@@ -1,0 +1,45 @@
+/* DELISA v1.26.1 — Keep Explore's fullscreen navigation below the cart.
+   Only changes stacking while the cart is open; ordinary pages are unaffected.
+   Uses :has(), already required by earlier DELISA cart styles. */
+
+/* Explore normally hides the global backdrop and promotes the bottom dock.
+   A cart drawer must temporarily take priority over both. */
+body.exp-mode:has(#cart-drawer.open) > #backdrop:not([hidden]){
+  display:block!important;
+  position:fixed!important;
+  inset:0!important;
+  z-index:210!important;
+  background:rgba(6,13,24,.53)!important;
+  -webkit-backdrop-filter:blur(2px)!important;
+  backdrop-filter:blur(2px)!important;
+}
+
+body.exp-mode #cart-drawer.drawer{
+  z-index:240!important;
+}
+
+/* Hide the dock only while the sheet is visible, so it cannot obscure the
+   total, Checkout or Continue shopping buttons, or remain keyboard-focusable. */
+body.exp-mode:has(#cart-drawer.open) > .mobile-bottom-nav{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  transition:opacity .18s ease,visibility 0s linear .18s!important;
+}
+
+/* Maintain the cart's existing three drag detents and content scrolling.
+   At short viewport heights the items scroll; the action footer stays in view. */
+body.exp-mode #cart-drawer .drawer-content{
+  min-height:0!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain;
+}
+body.exp-mode #cart-drawer .drawer-foot{
+  position:relative;
+  z-index:1;
+  flex-shrink:0!important;
+}
+
+@media (prefers-reduced-motion:reduce){
+  body.exp-mode:has(#cart-drawer.open) > .mobile-bottom-nav{transition:none!important}
+}
