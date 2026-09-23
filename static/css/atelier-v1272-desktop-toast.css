@@ -1,0 +1,39 @@
+/* DELISA v1.27.2 — desktop toast placement only; mobile v1.26 toast remains top-center. */
+@media (min-width: 761px) {
+  #toast.toast {
+    position: fixed !important;
+    top: auto !important;
+    left: auto !important;
+    right: clamp(20px, 3vw, 48px) !important;
+    bottom: 30px !important;
+    width: max-content !important;
+    max-width: min(360px, calc(100vw - 40px)) !important;
+    box-sizing: border-box;
+    margin: 0 !important;
+    padding: 13px 20px !important;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 16px;
+    background: #1e2b3f;
+    color: #fff;
+    text-align: right;
+    font-size: 13px;
+    line-height: 1.9;
+    box-shadow: 0 16px 40px rgba(15,28,45,.18);
+    opacity: 0;
+    transform: translate3d(0,12px,0) !important;
+    transition: opacity .22s ease, transform .3s cubic-bezier(.22,.8,.2,1) !important;
+    pointer-events: none;
+    z-index: 500;
+  }
+  #toast.toast.show {
+    opacity: 1;
+    transform: translate3d(0,0,0) !important;
+  }
+}
+/* At tablet-like desktop widths, keep the notification clear of the central bottom nav. */
+@media (min-width: 761px) and (max-width: 1099px) {
+  #toast.toast { bottom: 112px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #toast.toast { transition: none !important; }
+}
