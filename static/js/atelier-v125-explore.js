@@ -4,6 +4,9 @@
 const numeral = n => new Intl.NumberFormat('fa-IR').format(n);
 const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content || '';
 const root=document.querySelector('[data-explore-page]');
+if(root)document.body.classList.add('exp-mode');
+const pageRoot=document.querySelector('#page-root');
+if(pageRoot&&'MutationObserver' in window)new MutationObserver(()=>{if(!pageRoot.querySelector('[data-explore-page]'))document.body.classList.remove('exp-mode')}).observe(pageRoot,{childList:true});
 const upload=document.querySelector('[data-explore-upload]');
 if(upload){
   const fileInput=upload.querySelector('input[name="video"]');
@@ -50,33 +53,6 @@ let posts=[],loading=false,nextCursor=null,hasLoaded=false,active=-1;
 // Start with audio requested. A browser can reject unmuted autoplay;
 // then offer a one-tap explicit audio unlock rather than pretending it worked.
 let soundPreference=true, soundBlocked=false;
-const bottomNav=document.querySelector('#mobile-bottom-nav');
-function fitViewer(){
-  if(!viewer.isConnected)return;
-  const screenHeight=window.visualViewport?.height||window.innerHeight;
-  const navBox=bottomNav?.getBoundingClientRect();
-  const navVisible=navBox&&navBox.width>0&&navBox.height>0;
-  const navTop=navVisible?navBox.top:screenHeight-16;
-  const viewerTop=viewer.getBoundingClientRect().top;
-  const available=Math.floor(Math.min(screenHeight-12,navTop-12)-viewerTop);
-  // On extremely short viewports let the page itself scroll rather than
-  // letting the nav cover a full-size movie or collapsing the player.
-  const height=Math.min(760,Math.max(225,available));
-  const width=Math.max(1,Math.min(580,root.clientWidth,Math.floor(height*9/16)));
-  viewer.style.setProperty('--exp-available-height',height+'px');
-  viewer.style.height=height+'px';
-  viewer.style.width=width+'px';
-}
-let fitFrame=0;
-function requestFit(){
-  if(fitFrame)return;
-  fitFrame=requestAnimationFrame(()=>{fitFrame=0;fitViewer()});
-}
-window.addEventListener('resize',requestFit,{passive:true});
-window.addEventListener('orientationchange',requestFit,{passive:true});
-window.visualViewport?.addEventListener('resize',requestFit,{passive:true});
-requestFit();
-
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const canPreload=()=>{
   const c=navigator.connection;
@@ -88,10 +64,11 @@ function makeCard(p,index){
   const card=el('article','exp-post');card.dataset.index=index;card.dataset.postId=p.id;
   card.setAttribute('aria-label','ویدئو: '+(p.caption||p.product_name));
   const stage=el('div','exp-stage');
-  const image=el('img','exp-poster');image.src=p.poster;image.alt='';image.loading=index<2?'eager':'lazy';image.decoding='async';
-  const video=el('video','exp-video');video.muted=!soundPreference;video.playsInline=true;video.setAttribute('playsinline','');video.preload='none';video.loop=true;video.disablePictureInPicture=true;video.setAttribute('controlsList','nodownload noremoteplayback');
+  const backdrop=el('img','exp-backdrop');backdrop.src=p.poster;backdrop.alt='';backdrop.loading=index<2?'eager':'lazy';backdrop.decoding='async';
+  const image=el('img','exp-media-poster');image.src=p.poster;image.alt='';image.loading=index<2?'eager':'lazy';image.decoding='async';
+  const video=el('video','exp-video');video.muted=false;video.defaultMuted=false;video.playsInline=true;video.setAttribute('playsinline','');video.preload='none';video.loop=true;video.disablePictureInPicture=true;video.setAttribute('controlsList','nodownload noremoteplayback');
   const veil=el('div','exp-shade');
-  const wait=el('div','exp-video-loading');const spinner=el('span','exp-spinner');wait.append(spinner);wait.setAttribute('aria-label','در حال بارگذاری ویدئو');
+  const wait=el('div','exp-video-loading');const spinner=el('span','exp-spinner');const loadText=el('span','exp-loading-text','در حال بارگذاری');wait.append(spinner,loadText);wait.setAttribute('aria-label','در حال بارگذاری ویدئو');
   const tap=el('button','exp-play-toggle');tap.type='button';tap.setAttribute('aria-label','توقف یا پخش ویدئو');tap.append(svg('M9 6h2v12H9zM14 6h2v12h-2z'));
   const sidebar=el('div','exp-sidebar');
   const like=el('button','exp-action exp-like');like.type='button';like.setAttribute('aria-label','پسندیدن ویدئو');like.setAttribute('aria-pressed',p.liked?'true':'false');
@@ -105,11 +82,11 @@ function makeCard(p,index){
   sidebar.append(like,mute);
   const info=el('div','exp-info');const ey=el('span','exp-eyebrow','دلیسا / اکسپلور');
   const heading=el('h2','',p.product_name);const caption=el('p','',p.caption||'');
-  const product=el('a','exp-product');product.href=p.product_url;const thumb=el('img');thumb.src=p.poster;thumb.alt='';thumb.loading='lazy';thumb.width=42;thumb.height=50;
+  const product=el('a','exp-product');product.href=p.product_url;const thumb=el('img');thumb.src=p.poster;thumb.alt='';thumb.loading='lazy';thumb.width=27;thumb.height=30;
   const ptitle=el('span');ptitle.append(el('strong','',p.product_name),el('small','',p.stock>0?'دیدن محصول و انتخاب رنگ':'مشاهده جزئیات محصول'));
   const arr=el('span','exp-product-arrow','←');product.append(thumb,ptitle,arr);
   info.append(ey,heading,caption,product);
-  stage.append(image,video,veil,wait,tap,sidebar,info,soundUnlock);
+  stage.append(backdrop,image,video,veil,wait,tap,sidebar,info,soundUnlock);
   card.append(stage);
   card._video=video;card._wait=wait;card._like=like;card._count=likeCount;card._mute=mute;card._soundUnlock=soundUnlock;
   let liked=p.liked;
@@ -195,21 +172,36 @@ function show(index){
   if(index<0||index>=posts.length||index===active)return;
   const previous=active;active=index;
   posts.forEach((card,i)=>{
-    if(Math.abs(i-index)>1)release(card);
+    const distance=i-index;
+    if(Math.abs(distance)>1)release(card);
     else if(i===index){if(navigator.connection?.saveData)card.classList.add('is-paused');else play(card)}
-    else if(canPreload())attach(card,true);
+    else if(canPreload()){attach(card,true);card._video.preload=distance===1?'auto':'metadata'}
     if(i!==index)card._video.pause();
   });
   if(previous!==index&&nextCursor&&posts.length-index<3)loadMore();
 }
 function currentIndex(){
-  const center=viewer.getBoundingClientRect().top+viewer.clientHeight/2;
-  let closest=0,diff=Infinity;
-  posts.forEach((card,i)=>{const r=card.getBoundingClientRect();const delta=Math.abs((r.top+r.bottom)/2-center);if(delta<diff){diff=delta;closest=i}});
-  return closest;
+  if(!posts.length||!viewer.clientHeight)return 0;
+  return Math.max(0,Math.min(posts.length-1,Math.round(viewer.scrollTop/viewer.clientHeight)));
 }
 let scrollFrame=0;
 viewer.addEventListener('scroll',()=>{if(scrollFrame)return;scrollFrame=requestAnimationFrame(()=>{scrollFrame=0;show(currentIndex())})},{passive:true});
+let wheelLocked=false;
+viewer.addEventListener('wheel',e=>{
+  if(Math.abs(e.deltaY)<12||posts.length<2)return;
+  e.preventDefault();
+  if(wheelLocked)return;
+  wheelLocked=true;
+  const dir=e.deltaY>0?1:-1;
+  const target=Math.max(0,Math.min(posts.length-1,(active<0?0:active)+dir));
+  viewer.scrollTo({top:target*viewer.clientHeight,behavior:reduced?'auto':'smooth'});
+  show(target);
+  setTimeout(()=>{wheelLocked=false},reduced?80:430);
+},{passive:false});
+root.addEventListener('pointerdown',e=>{
+  if(!soundBlocked||active<0||e.target.closest('button,a'))return;
+  unlockSound(posts[active]);
+},{passive:true});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){posts.forEach(c=>c._video.pause())}else if(active>=0&&!navigator.connection?.saveData)play(posts[active])});
 async function loadMore(){
   if(loading||hasLoaded&&!nextCursor)return;
@@ -228,5 +220,4 @@ async function loadMore(){
   finally{loading=false}
 }
 loadMore();
-setTimeout(requestFit,120);
 })();
