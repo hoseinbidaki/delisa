@@ -43,6 +43,8 @@ SITE_NAME = 'دلیسا | DELISA'
 STATUS = {'pending': 'در انتظار بررسی', 'processing': 'در حال آماده‌سازی', 'shipped': 'ارسال شده', 'delivered': 'تحویل داده شده', 'cancelled': 'لغو شده'}
 MAX_BODY = 32 * 1024 * 1024
 MAX_IMAGE = 5 * 1024 * 1024
+MAX_EXPLORE_VIDEO = 20 * 1024 * 1024
+EXPLORE_MEDIA = DATA / "explore_media"
 
 
 def esc(value):
@@ -156,6 +158,22 @@ def init_db():
             postal_code TEXT NOT NULL DEFAULT '', latitude REAL, longitude REAL,
             is_default INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
         CREATE INDEX IF NOT EXISTS idx_addresses_user ON addresses(user_id,is_default,id);
+        CREATE TABLE IF NOT EXISTS explore_posts (
+            id INTEGER PRIMARY KEY,
+            product_id INTEGER NOT NULL REFERENCES products(id),
+            filename TEXT NOT NULL UNIQUE,
+            caption TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_explore_posts_id ON explore_posts(id DESC);
+        CREATE TABLE IF NOT EXISTS explore_likes (
+            post_id INTEGER NOT NULL REFERENCES explore_posts(id) ON DELETE CASCADE,
+            actor TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            PRIMARY KEY(post_id,actor)
+        );
+        CREATE INDEX IF NOT EXISTS idx_explore_likes_post ON explore_likes(post_id);
+
         CREATE INDEX IF NOT EXISTS idx_products_active ON products(active,category);
         CREATE TABLE IF NOT EXISTS coupons (
             id INTEGER PRIMARY KEY,
@@ -686,8 +704,124 @@ def checkout_page(conn,sess):
     return layout(body,'ثبت سفارش آزمایشی | دلیسا',sess,'/checkout')
 
 
+# DELISA v1.25: video Explore. Uploaded bytes live in DATA/explore_media, not Git.
+def explore_actor(sess):
+    # Signed-in likes follow an account; anonymous likes follow the browser session.
+    return ('u:' + str(sess['uid'])) if sess.get('uid') else ('s:' + sess['id_hash'])
+
+
+def explore_page(conn, sess):
+    return layout(read_template('explore.html'), 'اکسپلور | دلیسا', sess, '/explore',
+                  'ویدئوهای استایل دلیسا و محصولات مرتبط')
+
+
+def explore_feed(conn, sess, req):
+    try: after = int(req.query.get('after', '0') or '0')
+    except (TypeError, ValueError): raise HTTPError(400, 'صفحه نامعتبر است.')
+    if after < 0: raise HTTPError(400, 'صفحه نامعتبر است.')
+    limit = 5
+    where = 'AND ep.id < ?' if after else ''
+    params = (after, limit + 1) if after else (limit + 1,)
+    rows = conn.execute('''SELECT ep.id,ep.caption,ep.created_at,p.slug,p.name,p.image,p.price,p.stock,
+        (SELECT count(*) FROM explore_likes el WHERE el.post_id=ep.id) AS likes,
+        EXISTS(SELECT 1 FROM explore_likes el WHERE el.post_id=ep.id AND el.actor=?) AS liked
+        FROM explore_posts ep JOIN products p ON p.id=ep.product_id
+        WHERE p.active=1 ''' + where + ''' ORDER BY ep.id DESC LIMIT ?''',
+        (explore_actor(sess),) + params).fetchall()
+    more = len(rows) > limit
+    rows = rows[:limit]
+    return json_response({'posts': [{
+        'id': r['id'], 'caption': r['caption'], 'poster': r['image'] or '/static/img/vest.svg',
+        'media': '/explore/media/' + str(r['id']), 'product_url': '/product/' + quote(r['slug']),
+        'product_name': r['name'], 'price': r['price'], 'stock': r['stock'],
+        'likes': r['likes'], 'liked': bool(r['liked'])} for r in rows],
+        'next': rows[-1]['id'] if more and rows else None})
+
+
+def explore_media(req, conn, post_id):
+    # No arbitrary filenames or direct access to unlisted videos.
+    post = conn.execute('SELECT filename FROM explore_posts WHERE id=?', (post_id,)).fetchone()
+    if not post or not re.fullmatch(r'[0-9a-f]{32}\.mp4', post['filename']):
+        raise HTTPError(404, 'ویدئو پیدا نشد.')
+    file = EXPLORE_MEDIA / post['filename']
+    if not file.is_file(): raise HTTPError(404, 'فایل ویدئو در سرور پیدا نشد.')
+    size = file.stat().st_size
+    if size <= 0: raise HTTPError(404, 'ویدئو پیدا نشد.')
+    first, last = 0, size-1
+    header = req.headers.get('range', '').strip()
+    if header:
+        matched = re.fullmatch(r'bytes=(\d*)-(\d*)', header)
+        if not matched or (not matched[1] and not matched[2]):
+            raise HTTPError(416, 'بازه ویدئو معتبر نیست.')
+        if matched[1]:
+            first = int(matched[1]); last = min(int(matched[2]), size-1) if matched[2] else size-1
+        else:
+            length = int(matched[2])
+            first = max(0, size-length)
+        if first >= size or first > last: raise HTTPError(416, 'بازه ویدئو معتبر نیست.')
+    count = last-first+1
+    headers = [('Accept-Ranges','bytes'),('Cache-Control','public, max-age=604800, immutable'),
+               ('X-Content-Type-Options','nosniff'),('Content-Length',str(count))]
+    if header: headers.append(('Content-Range',f'bytes {first}-{last}/{size}'))
+    result = Response(b'', 206 if header else 200, 'video/mp4', headers)
+    result.stream_file = file
+    result.stream_start = first
+    result.stream_length = count if req.method!='HEAD' else 0
+    return result
+
+
+def explore_admin(conn, sess, error='', posted=False):
+    products = conn.execute('SELECT id,name,category FROM products WHERE active=1 ORDER BY id DESC LIMIT 1000').fetchall()
+    options = ''.join('<option value="' + str(p['id']) + '">' + esc(p['name']) + ' — ' + esc(p['category']) + '</option>' for p in products)
+    rows = conn.execute('''SELECT ep.id,ep.caption,ep.created_at,p.name,p.image,
+        (SELECT count(*) FROM explore_likes WHERE post_id=ep.id) AS likes
+        FROM explore_posts ep JOIN products p ON p.id=ep.product_id ORDER BY ep.id DESC LIMIT 100''').fetchall()
+    cards=''.join(f'''<article class="exp-admin-item">
+        <img src="{esc(r['image'] or '/static/img/vest.svg')}" loading="lazy" alt="" width="90" height="118">
+        <div><strong>{esc(r['caption'] or r['name'])}</strong><small>محصول: {esc(r['name'])}</small>
+        <small>{jalali_date(r['created_at'])} · {r['likes']} پسند</small></div>
+        <form method="post" action="/admin/explore/{r['id']}/delete" onsubmit="return confirm('این ویدئو حذف شود؟')">
+          <input type="hidden" name="csrf" value="{esc(sess['csrf'])}"><button type="submit" class="exp-remove">حذف ویدئو</button></form>
+        </article>''' for r in rows)
+    form = read_template('admin_explore.html', options=options,
+        error=('<p class="exp-admin-error" role="alert">'+esc(error)+'</p>') if error else '',
+        success='<p class="exp-admin-success">ویدئو منتشر شد.</p>' if posted else '',
+        items=cards or '<p class="muted">هنوز ویدئویی منتشر نکردی.</p>',
+        csrf=esc(sess['csrf']))
+    return admin_layout(form, 'مدیریت اکسپلور',sess)
+
+
+def create_explore_post(req, conn, sess):
+    require_user(sess,True)
+    try: product_id = int(req.value('product_id') or 0)
+    except (TypeError,ValueError): raise HTTPError(400,'محصول را انتخاب کن.')
+    product = conn.execute('SELECT id FROM products WHERE id=? AND active=1', (product_id,)).fetchone()
+    if not product: raise HTTPError(400,'محصول معتبر و فعال انتخاب کن.')
+    caption = str(req.value('caption','')).strip()
+    if len(caption) > 240: raise HTTPError(400,'متن ویدئو بیشتر از ۲۴۰ کاراکتر است.')
+    file = req.files.get('video')
+    if not file or not file[0]: raise HTTPError(400,'ویدئوی MP4 را انتخاب کن.')
+    original, raw = file
+    if Path(original).suffix.lower() != '.mp4' or len(raw) < 1024 or raw[4:8] != b'ftyp':
+        raise HTTPError(400,'فایل باید یک ویدئوی MP4 معتبر باشد.')
+    if len(raw) > MAX_EXPLORE_VIDEO: raise HTTPError(413,'حجم هر ویدئو حداکثر ۲۰ مگابایت است.')
+    EXPLORE_MEDIA.mkdir(parents=True,exist_ok=True)
+    filename=uuid.uuid4().hex+'.mp4'
+    dest=EXPLORE_MEDIA/filename
+    # Write once, keep DB/file in sync if insert fails.
+    try:
+        dest.write_bytes(raw)
+        with conn:
+            conn.execute('INSERT INTO explore_posts(product_id,filename,caption,created_at) VALUES(?,?,?,?)',
+                         (product_id,filename,caption,now()))
+    except Exception:
+        dest.unlink(missing_ok=True)
+        raise
+    return redirect('/admin/explore?posted=1')
+
+
 def admin_layout(content,title,sess):
-    menu='''<a href="/admin">داشبورد</a><a href="/admin/accounting">حسابداری</a><a href="/admin/products">محصولات</a><a href="/admin/orders">سفارش‌ها</a><a href="/admin/coupons">کدهای تخفیف</a><a href="/admin/users">کاربران</a><a href="/admin/export/orders">خروجی CSV</a>'''
+    menu='''<a href="/admin">داشبورد</a><a href="/admin/accounting">حسابداری</a><a href="/admin/products">محصولات</a><a href="/admin/explore">اکسپلور ویدئو</a><a href="/admin/orders">سفارش‌ها</a><a href="/admin/coupons">کدهای تخفیف</a><a href="/admin/users">کاربران</a><a href="/admin/export/orders">خروجی CSV</a>'''
     head=f'''<section class="admin-head admin-head-pro"><div><span class="eyebrow">DELISA CONTROL ROOM</span><h1>{esc(title)}</h1><p class="muted">کنترل کامل محصولات، سفارش‌ها، مشتری‌ها و تحلیل فروش در یک نگاه.</p></div><div class="admin-head-actions"><a class="btn btn-light" href="/">نمایش فروشگاه</a><a class="btn" href="/admin/products/new">محصول جدید</a></div></section><nav class="admin-nav">{menu}</nav>'''
     return layout(f'<div class="container admin-wrap">{head}{content}</div>',title+' | مدیریت دلیسا',sess,'/admin')
 
@@ -740,7 +874,7 @@ def admin_accounting(conn,sess):
     coupon_rows = conn.execute('SELECT code,kind,value,used_count FROM coupons ORDER BY used_count DESC, id DESC LIMIT 8').fetchall()
     coupon_html = ''.join(f'<div class="summary-line"><span><code dir="ltr">{esc(r["code"])} </code></span><strong>{r["used_count"]} بار</strong></div>' for r in coupon_rows) or '<p class="muted">کد تخفیفی ندارید.</p>'
     recent = conn.execute('SELECT id,full_name,total,status,created_at FROM orders ORDER BY id DESC LIMIT 8').fetchall()
-    recent_html = ''.join(f'<tr><td>#{r["id"]}</td><td>{esc(r["full_name"] )}</td><td>{money(r["total"] )}</td><td>{esc(STATUS.get(r["status"],r["status"]))}</td><td>{jalali_date(r['created_at'])}</td></tr>' for r in recent)
+    recent_html = ''.join(f'<tr><td>#{r["id"]}</td><td>{esc(r["full_name"] )}</td><td>{money(r["total"] )}</td><td>{esc(STATUS.get(r["status"],r["status"]))}</td><td>{jalali_date(r["created_at"])}</td></tr>' for r in recent)
     body=f'''<section class="stats stats-pro accounting-kpis"><article class="stat stat-pro"><small>فروش کل</small><strong>{money(total_revenue)}</strong><span>بدون سفارش‌های لغوشده</span></article><article class="stat stat-pro"><small>تخفیف اعطا شده</small><strong>{money(total_discounts)}</strong><span>محصول + کد تخفیف</span></article><article class="stat stat-pro"><small>درآمد خالص تقریبی</small><strong>{money(max(total_revenue-total_discounts,0))}</strong><span>قبل از هزینه‌ها</span></article><article class="stat stat-pro"><small>تعداد شهرهای فعال</small><strong>{len(shipping_cities)}</strong><span>بر اساس سفارش‌های ثبت‌شده</span></article></section><div class="admin-columns admin-columns-pro"><section class="panel glass-panel"><h2>گردش فروش ۳۰ روز اخیر</h2>{daily_html}</section><section class="panel glass-panel"><h2>فروش به تفکیک شهر</h2>{city_html}</section></div><div class="admin-columns admin-columns-pro admin-columns-3"><section class="panel glass-panel"><h2>محصولات درآمدساز</h2>{top_products_html}</section><section class="panel glass-panel"><h2>کدهای تخفیف فعال</h2>{coupon_html}</section><section class="panel glass-panel"><h2>نکات حسابداری</h2><div class="summary-line"><span>اتصال درگاه</span><strong>فعال نیست</strong></div><div class="summary-line"><span>نوع فروش</span><strong>آزمایشی / دمو</strong></div><div class="summary-line"><span>تسویه</span><strong>دستی</strong></div><p class="muted tiny">این بخش برای تحلیل فروش و مدیریت داخلی آماده شده و تا پیش از اتصال درگاه، جنبه عملیاتی کامل ندارد.</p></section></div><section class="panel glass-panel"><h2>آخرین سفارش‌ها</h2><div class="table-wrap"><table><thead><tr><th>سفارش</th><th>مشتری</th><th>مبلغ</th><th>وضعیت</th><th>تاریخ</th></tr></thead><tbody>{recent_html}</tbody></table></div></section>'''
     return admin_layout(body,'حسابداری و تحلیل فروش',sess)
 
@@ -814,6 +948,9 @@ def error_page(status,message,sess):
 
 def main_handler(req,conn,sess):
     p=req.path;m=req.method
+    if m=='HEAD':
+        match=re.fullmatch(r'/explore/media/(\d+)',p)
+        if match:return explore_media(req,conn,int(match[1]))
     # Read-only pages -------------------------------------------------
     if m=='GET':
         if p=='/':return home(conn,sess)
@@ -831,6 +968,11 @@ def main_handler(req,conn,sess):
         if p=='/checkout':return checkout_page(conn,sess) if sess.get('uid') else redirect('/login')
         match=re.fullmatch(r'/account/orders/(\d+)',p)
         if match:return order_detail(conn,sess,int(match[1])) if sess.get('uid') else redirect('/login')
+        if p=='/explore':return explore_page(conn,sess)
+        if p=='/api/explore':return explore_feed(conn,sess,req)
+        match=re.fullmatch(r'/explore/media/(\d+)',p)
+        if match:return explore_media(req,conn,int(match[1]))
+        if p=='/admin/explore':require_user(sess,True);return explore_admin(conn,sess,posted=req.query.get('posted')=='1')
         if p=='/admin':require_user(sess,True);return admin_dashboard(conn,sess)
         if p=='/admin/products':require_user(sess,True);return admin_products(conn,sess)
         if p=='/admin/accounting':require_user(sess,True);return admin_accounting(conn,sess)
@@ -850,6 +992,22 @@ def main_handler(req,conn,sess):
             return json_response({'products':[dict(r) for r in rows]})
     # All mutations (including authentication) require a CSRF token.
     if m=='POST':require_csrf(req,sess)
+    if m=='POST' and p=='/admin/explore/new':
+        require_user(sess,True)
+        return create_explore_post(req,conn,sess)
+    if m=='POST' and p=='/api/explore/like':
+        try: post_id=int(req.value('post_id') or 0)
+        except (ValueError,TypeError): raise HTTPError(400,'ویدئو نامعتبر است.')
+        if post_id<=0: raise HTTPError(400,'ویدئو نامعتبر است.')
+        post=conn.execute("SELECT 1 FROM explore_posts ep JOIN products p ON p.id=ep.product_id WHERE ep.id=? AND p.active=1",(post_id,)).fetchone()
+        if not post: raise HTTPError(404,'ویدئو پیدا نشد.')
+        actor=explore_actor(sess)
+        with conn:
+            existing=conn.execute('SELECT 1 FROM explore_likes WHERE post_id=? AND actor=?',(post_id,actor)).fetchone()
+            if existing:conn.execute('DELETE FROM explore_likes WHERE post_id=? AND actor=?',(post_id,actor))
+            else:conn.execute('INSERT INTO explore_likes(post_id,actor,created_at) VALUES(?,?,?)',(post_id,actor,now()))
+            count=conn.execute('SELECT count(*) FROM explore_likes WHERE post_id=?',(post_id,)).fetchone()[0]
+        return json_response({'liked':not bool(existing),'likes':count})
     if m=='POST' and p=='/login':
         email=str(req.value('email')).strip().lower()[:254]
         password=str(req.value('password'))
@@ -1024,6 +1182,15 @@ def main_handler(req,conn,sess):
         return redirect('/account/orders/'+str(oid))
     if m=='POST' and p.startswith('/admin/'):
         require_user(sess,True)
+        match=re.fullmatch(r'/admin/explore/(\d+)/delete',p)
+        if match:
+            post_id=int(match[1])
+            post=conn.execute('SELECT filename FROM explore_posts WHERE id=?',(post_id,)).fetchone()
+            if not post:raise HTTPError(404,'ویدئو پیدا نشد.')
+            with conn:conn.execute('DELETE FROM explore_posts WHERE id=?',(post_id,))
+            if re.fullmatch(r'[0-9a-f]{32}\.mp4',post['filename']):
+                (EXPLORE_MEDIA/post['filename']).unlink(missing_ok=True)
+            return redirect('/admin/explore')
         if p=='/admin/coupons/new':
             code=str(req.value('code','')).strip().upper()
             kind=str(req.value('kind',''))
@@ -1168,7 +1335,7 @@ def static_response(path):
     return Response(file.read_bytes(),200,content_type,[('Cache-Control','public, max-age=86400'),('X-Content-Type-Options','nosniff')])
 
 
-STATUSES={200:'OK',303:'See Other',400:'Bad Request',401:'Unauthorized',403:'Forbidden',404:'Not Found',405:'Method Not Allowed',409:'Conflict',413:'Content Too Large',429:'Too Many Requests',500:'Internal Server Error',502:'Bad Gateway',503:'Service Unavailable'}
+STATUSES={206:'Partial Content',416:'Range Not Satisfiable',200:'OK',303:'See Other',400:'Bad Request',401:'Unauthorized',403:'Forbidden',404:'Not Found',405:'Method Not Allowed',409:'Conflict',413:'Content Too Large',429:'Too Many Requests',500:'Internal Server Error',502:'Bad Gateway',503:'Service Unavailable'}
 
 
 def application(environ,start_response):
@@ -1197,6 +1364,20 @@ def application(environ,start_response):
         response.status=500
     finally:
         if conn:conn.close()
+    if getattr(response,'stream_file',None) is not None:
+        headers=response.headers
+        if set_cookie:headers.append(set_cookie)
+        start_response(str(response.status)+' '+STATUSES.get(response.status,'OK'),headers)
+        def file_chunks():
+            remaining=response.stream_length
+            with response.stream_file.open('rb') as source:
+                source.seek(response.stream_start)
+                while remaining>0:
+                    block=source.read(min(256*1024,remaining))
+                    if not block:break
+                    remaining-=len(block)
+                    yield block
+        return file_chunks()
     headers=response.headers+[('Content-Length',str(len(response.body)))]
     if set_cookie:headers.append(set_cookie)
     start_response(str(response.status)+' '+STATUSES.get(response.status,'OK'),headers)

@@ -1,0 +1,16 @@
+<div class="exp-admin">
+  <section class="panel exp-admin-panel"><div class="exp-admin-title"><div><span class="exp-mini">استودیو محتوا</span><h2>ویدئوی جدید</h2></div><span class="exp-admin-limit">MP4 · حداکثر ۲۰ مگابایت</span></div>
+  <p class="muted">برای سرعت و پخش روان، ویدئوی عمودی ۹:۱۶ با کدک H.264 و گزینه Fast Start خروجی بگیر. کاور و لینک محصول از محصول انتخاب‌شده گرفته می‌شود.</p>
+  $error $success
+  <form action="/admin/explore/new" method="post" enctype="multipart/form-data" data-explore-upload>
+    <input type="hidden" name="csrf" value="$csrf">
+    <label>محصول مرتبط<select name="product_id" required><option value="">انتخاب محصول…</option>$options</select></label>
+    <label>توضیح کوتاه<textarea name="caption" maxlength="240" rows="2" placeholder="مثلاً: جزئیاتی که توی تن، تفاوتش را حس می‌کنی."></textarea></label>
+    <label>ویدئوی MP4<input type="file" name="video" accept="video/mp4,.mp4" required></label>
+    <div class="exp-upload-progress" data-upload-progress hidden><div><span>در حال ارسال ویدئو…</span><output data-upload-label>۰٪</output></div><progress value="0" max="100" data-upload-bar></progress></div>
+    <p class="exp-upload-error" data-upload-error role="alert" hidden></p>
+    <button class="btn" type="submit" data-upload-button>انتشار ویدئو ←</button>
+  </form>
+  </section>
+  <section class="panel exp-admin-panel"><h2>ویدئوهای منتشرشده</h2><div class="exp-admin-list">$items</div></section>
+</div>

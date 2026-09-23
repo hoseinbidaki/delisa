@@ -24,7 +24,7 @@ function alertUser(message){
 function refreshMobileNav(){
  if(!mobileNav)return;
  const path=location.pathname;
-  const chosen=path==='/'?'home':(path==='/shop'||path.startsWith('/product/'))?'shop':(path==='/account'||path.startsWith('/account/')||path==='/login'||path==='/register')?'account':'';
+  const chosen=path==='/'?'home':(path==='/shop'||path.startsWith('/product/'))?'shop':path==='/explore'?'explore':(path==='/account'||path.startsWith('/account/')||path==='/login'||path==='/register')?'account':'';
  mobileNav.querySelectorAll('[data-bottom-route]').forEach(link=>{
   if(link.dataset.bottomRoute===chosen)link.setAttribute('aria-current','page');
   else link.removeAttribute('aria-current');
