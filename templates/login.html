@@ -1,1 +1,22 @@
-<section class="auth-wrap auth-experience"><div class="auth-card"><div class="auth-heading"><span class="eyebrow ink">YOUR DELISA ACCOUNT</span><h1>خوش اومدی به دلیسا</h1><p class="muted">سفارش‌ها و انتخاب‌های موردعلاقه‌ات، یک‌جا در حساب دلیسا.</p></div>$error<form method="post" action="/login" class="form auth-form"><input type="hidden" name="csrf" value="$csrf"><label>آدرس ایمیل<input dir="ltr" name="email" type="email" inputmode="email" autocomplete="username" maxlength="254" required placeholder="name@example.com"></label><label>رمز عبور<span class="password-control"><input dir="ltr" name="password" type="password" autocomplete="current-password" required><button class="password-toggle" type="button" aria-label="نمایش رمز عبور" aria-pressed="false" data-password-toggle>نمایش</button></span></label><button class="btn auth-submit" type="submit">ورود به حساب <span aria-hidden="true">←</span></button></form><p class="auth-extra">هنوز حساب نداری؟ <a href="/register" class="underlined">ساخت حساب جدید ←</a></p><div class="auth-footnote">DELISA ATELIER <span>·</span> YOUR PERSONAL EDIT</div></div><aside class="auth-aside" aria-hidden="true"><div><span class="eyebrow">THE DELISA EDIT</span><strong>ساده انتخاب کن،<br>ماندگار بپوش.</strong><span>DELISA / 01</span></div></aside></section>
+<section class="auth-wrap dl-auth" aria-labelledby="dl-auth-heading">
+  <div class="dl-auth-shell">
+    <div class="auth-card dl-auth-card">
+      <div class="dl-auth-head"><a href="/" class="dl-auth-wordmark" aria-label="صفحه اصلی دلیسا">DELISA <span>ATELIER</span></a><span class="dl-auth-index">حساب کاربری / ۰۱</span></div>
+      <div class="dl-auth-intro"><span class="dl-auth-kicker">خوش اومدی</span><h1 id="dl-auth-heading">دوباره به <em>دلیسا</em> خوش اومدی.</h1><p>برای دیدن سفارش‌ها و ادامه خرید، وارد حسابت شو.</p></div>
+      $error
+      <form method="post" action="/login" class="form dl-auth-form" data-dl-auth-form>
+        <input type="hidden" name="csrf" value="$csrf">
+        <label for="dl-login-email">ایمیل
+          <input id="dl-login-email" dir="ltr" name="email" type="email" inputmode="email" autocomplete="username" maxlength="254" required placeholder="you@example.com">
+        </label>
+        <label for="dl-login-password">رمز عبور
+          <span class="dl-auth-password"><input id="dl-login-password" dir="ltr" name="password" type="password" autocomplete="current-password" required placeholder="رمز عبور خودت رو وارد کن"><button type="button" data-dl-password-toggle aria-controls="dl-login-password" aria-label="نمایش رمز عبور" aria-pressed="false">نمایش</button></span>
+        </label>
+        <button class="btn dl-auth-submit" type="submit"><span>ورود به حساب</span><span aria-hidden="true">←</span></button>
+      </form>
+      <p class="auth-extra dl-auth-extra">هنوز حساب نداری؟ <a href="/register" class="underlined">عضویت در دلیسا <span aria-hidden="true">←</span></a></p>
+      <div class="dl-auth-footer">سادگی، انتخابی ماندگار.</div>
+    </div>
+    <aside class="dl-auth-visual dl-auth-visual-login" aria-hidden="true"><img src="/static/img/delisa-v123-flatlay-640.webp" alt="" width="640" height="853" decoding="async" loading="lazy"><div class="dl-auth-visual-top">دلیسا / آتلیه</div><div class="dl-auth-visual-bottom"><i></i><strong>زیبایی در جزئیات است.</strong><small>انتخاب‌های ماندگار برای استایل شخصی تو</small></div></aside>
+  </div>
+</section>

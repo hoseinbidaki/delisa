@@ -1,4 +1,4 @@
-/* DELISA v1.25.1 - Explore videos: lightweight, one playing video at a time. */
+/* DELISA v1.27 - Explore: release media on exit, bounded work per swipe. */
 (()=>{
 'use strict';
 const numeral = n => new Intl.NumberFormat('fa-IR').format(n);
@@ -6,7 +6,7 @@ const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content ||
 const root=document.querySelector('[data-explore-page]');
 if(root)document.body.classList.add('exp-mode');
 const pageRoot=document.querySelector('#page-root');
-if(pageRoot&&'MutationObserver' in window)new MutationObserver(()=>{if(!pageRoot.querySelector('[data-explore-page]'))document.body.classList.remove('exp-mode')}).observe(pageRoot,{childList:true});
+// The cleanup observer is installed below, after media state has been initialized.
 const upload=document.querySelector('[data-explore-upload]');
 if(upload){
   const fileInput=upload.querySelector('input[name="video"]');
@@ -50,6 +50,43 @@ const viewer=root.querySelector('[data-explore-viewer]');
 const initial=root.querySelector('[data-explore-initial]');
 const end=root.querySelector('[data-explore-end]');
 let posts=[],loading=false,nextCursor=null,hasLoaded=false,active=-1;
+let disposed=false,scrollFrame=0,wheelLocked=false,wheelTimer=0;
+const loadedCards=new Set();
+let feedController=null;
+function cleanupExplore(){
+  if(disposed)return;
+  disposed=true;
+  if(feedController){feedController.abort();feedController=null}
+  if(scrollFrame){cancelAnimationFrame(scrollFrame);scrollFrame=0}
+  if(wheelTimer){clearTimeout(wheelTimer);wheelTimer=0}
+  for(const card of Array.from(loadedCards))release(card);
+  active=-1;
+}
+// Stop video decoding/network immediately on navigation, before native page unload
+// or soft-navigation DOM replacement. Do not remove exp-mode until the DOM changes.
+function navigationClick(event){
+  if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.altKey||event.shiftKey)return;
+  const target=event.target.closest?.('a[href],#mobile-nav-back');
+  if(!target)return;
+  if(target.id==='mobile-nav-back'){cleanupExplore();return}
+  let url;try{url=new URL(target.href,location.href)}catch{return}
+  if(url.origin!==location.origin||url.pathname!==location.pathname||url.search!==location.search)cleanupExplore();
+}
+document.addEventListener('click',navigationClick,true);
+window.addEventListener('pagehide',cleanupExplore,{once:true});
+window.addEventListener('pageshow',event=>{
+  if(event.persisted&&disposed&&location.pathname==='/explore')location.reload();
+});
+window.addEventListener('popstate',()=>{if(location.pathname!=='/explore')cleanupExplore()});
+if(pageRoot&&'MutationObserver' in window){
+  const observer=new MutationObserver(()=>{
+    if(!root.isConnected||!pageRoot.querySelector('[data-explore-page]')){
+      cleanupExplore();document.body.classList.remove('exp-mode');observer.disconnect();
+    }
+  });
+  observer.observe(pageRoot,{childList:true});
+}
+
 // Start with audio requested. A browser can reject unmuted autoplay;
 // then offer a one-tap explicit audio unlock rather than pretending it worked.
 let soundPreference=true, soundBlocked=false;
@@ -139,14 +176,25 @@ function unlockSound(card){
     });
   }
 }
-function message(text){const box=el('div','exp-toast',text);root.append(box);setTimeout(()=>box.remove(),3200)}
-function attach(card,preload){const video=card._video;if(video.dataset.loaded==='1')return;
-  video.dataset.loaded='1';video.preload=preload?'metadata':'auto';video.src='/explore/media/'+card.dataset.postId;
+function message(text){if(disposed||!root.isConnected)return;const box=el('div','exp-toast',text);root.append(box);setTimeout(()=>box.remove(),3200)}
+function attach(card,preload){
+  if(disposed||!card||!card.isConnected)return;
+  const video=card._video;if(video.dataset.loaded==='1')return;
+  video.dataset.loaded='1';loadedCards.add(card);
+  video.preload=preload?'metadata':'auto';video.src='/explore/media/'+card.dataset.postId;
 }
-function release(card){if(!card)return;const video=card._video;video.pause();if(video.dataset.loaded==='1'){
-  video.removeAttribute('src');video.load();video.dataset.loaded='0';card.classList.remove('has-frame','is-paused','is-buffering')
-}}
-async function play(card){if(!card||document.hidden)return;
+function release(card){
+  if(!card)return;
+  const video=card._video;
+  video.pause();
+  if(video.dataset.loaded==='1'){
+    video.dataset.loaded='0';loadedCards.delete(card);
+    video.removeAttribute('src');video.preload='none';
+    // Only cards with active network media need load() to cancel their fetch/decoder.
+    video.load();card.classList.remove('has-frame','is-paused','is-buffering','is-current');
+  }
+}
+async function play(card){if(disposed||!root.isConnected||!card||document.hidden)return;
   attach(card,false);
   const video=card._video;
   const trySound=soundPreference&&!soundBlocked;
@@ -154,6 +202,7 @@ async function play(card){if(!card||document.hidden)return;
   updateSoundUI(card);
   card.classList.add('is-buffering');
   try{await video.play()}catch(err){
+    if(disposed||!root.isConnected)return;
     // Chrome/Edge/Safari often block sound until the viewer has tapped once.
     // Keep the feed moving without sound, and expose a visible sound button.
     if(err.name==='NotAllowedError'&&trySound){
@@ -169,55 +218,78 @@ async function play(card){if(!card||document.hidden)return;
   }
 }
 function show(index){
-  if(index<0||index>=posts.length||index===active)return;
+  if(disposed||!root.isConnected||index<0||index>=posts.length||index===active)return;
   const previous=active;active=index;
-  posts.forEach((card,i)=>{
-    const distance=i-index;
-    if(Math.abs(distance)>1)release(card);
-    else if(i===index){if(navigator.connection?.saveData)card.classList.add('is-paused');else play(card)}
-    else if(canPreload()){attach(card,true);card._video.preload=distance===1?'auto':'metadata'}
-    if(i!==index)card._video.pause();
-  });
-  if(previous!==index&&nextCursor&&posts.length-index<3)loadMore();
+  // At most 2 sources stay attached (current and next metadata). No O(n)
+  // video src churn and no layout measurement on every swipe.
+  for(const card of Array.from(loadedCards)){
+    const distance=Number(card.dataset.index)-index;
+    if(distance!==0&&distance!==1)release(card);
+    else if(distance===1)card._video.pause();
+  }
+  if(previous>=0&&posts[previous]&&previous!==index){
+    posts[previous].classList.remove('is-current');
+    posts[previous]._video.pause();
+  }
+  const current=posts[index];current.classList.add('is-current');
+  if(navigator.connection?.saveData)current.classList.add('is-paused');
+  else play(current);
+  const next=posts[index+1];
+  if(next&&canPreload())attach(next,true);
+  if(nextCursor&&posts.length-index<3)loadMore();
 }
 function currentIndex(){
   if(!posts.length||!viewer.clientHeight)return 0;
   return Math.max(0,Math.min(posts.length-1,Math.round(viewer.scrollTop/viewer.clientHeight)));
 }
-let scrollFrame=0;
-viewer.addEventListener('scroll',()=>{if(scrollFrame)return;scrollFrame=requestAnimationFrame(()=>{scrollFrame=0;show(currentIndex())})},{passive:true});
-let wheelLocked=false;
+viewer.addEventListener('scroll',()=>{
+  if(disposed||scrollFrame)return;
+  scrollFrame=requestAnimationFrame(()=>{scrollFrame=0;if(!disposed)show(currentIndex())});
+},{passive:true});
 viewer.addEventListener('wheel',e=>{
-  if(Math.abs(e.deltaY)<12||posts.length<2)return;
+  if(disposed||Math.abs(e.deltaY)<12||posts.length<2)return;
   e.preventDefault();
   if(wheelLocked)return;
   wheelLocked=true;
-  const dir=e.deltaY>0?1:-1;
-  const target=Math.max(0,Math.min(posts.length-1,(active<0?0:active)+dir));
+  const target=Math.max(0,Math.min(posts.length-1,(active<0?0:active)+(e.deltaY>0?1:-1)));
   viewer.scrollTo({top:target*viewer.clientHeight,behavior:reduced?'auto':'smooth'});
   show(target);
-  setTimeout(()=>{wheelLocked=false},reduced?80:430);
+  wheelTimer=setTimeout(()=>{wheelLocked=false;wheelTimer=0},reduced?80:430);
 },{passive:false});
 root.addEventListener('pointerdown',e=>{
-  if(!soundBlocked||active<0||e.target.closest('button,a'))return;
+  if(disposed||!soundBlocked||active<0||e.target.closest('button,a'))return;
   unlockSound(posts[active]);
 },{passive:true});
-document.addEventListener('visibilitychange',()=>{if(document.hidden){posts.forEach(c=>c._video.pause())}else if(active>=0&&!navigator.connection?.saveData)play(posts[active])});
+document.addEventListener('visibilitychange',()=>{
+  if(disposed)return;
+  if(document.hidden){for(const card of loadedCards)card._video.pause()}
+  else if(active>=0&&!navigator.connection?.saveData)play(posts[active]);
+});
 async function loadMore(){
-  if(loading||hasLoaded&&!nextCursor)return;
+  if(disposed||loading||(hasLoaded&&!nextCursor))return;
   loading=true;
+  const controller=new AbortController();feedController=controller;
   try{
-    const resp=await fetch('/api/explore'+(nextCursor?'?after='+encodeURIComponent(nextCursor):''),{credentials:'same-origin',headers:{'Accept':'application/json'}});
+    const resp=await fetch('/api/explore'+(nextCursor?'?after='+encodeURIComponent(nextCursor):''),{
+      credentials:'same-origin',headers:{'Accept':'application/json'},signal:controller.signal
+    });
+    if(disposed||!root.isConnected)return;
     if(!resp.ok)throw Error('اکسپلور در دسترس نیست.');
     const data=await resp.json();
+    if(disposed||!root.isConnected)return;
     initial?.remove();
-    for(const p of data.posts){const card=makeCard(p,posts.length);posts.push(card);viewer.append(card)}
+    const fragment=document.createDocumentFragment();
+    for(const p of data.posts){const card=makeCard(p,posts.length);posts.push(card);fragment.append(card)}
+    viewer.append(fragment);
     nextCursor=data.next;hasLoaded=true;
     if(!posts.length){const empty=el('div','exp-empty');empty.append(el('h2','','اکسپلور دلیسا به‌زودی…'),el('p','','به‌زودی ویدئوهای تازه اینجا می‌بینی.'));viewer.append(empty)}
     if(!nextCursor&&posts.length)end.hidden=false;
     if(active<0&&posts.length)show(0);
-  }catch(err){if(!hasLoaded&&initial){initial.replaceChildren(el('span','',err.message));const retry=el('button','','تلاش دوباره');retry.type='button';retry.onclick=loadMore;initial.append(retry)}else message(err.message)}
-  finally{loading=false}
+  }catch(err){
+    if(disposed||err.name==='AbortError')return;
+    if(!hasLoaded&&initial){initial.replaceChildren(el('span','',err.message));const retry=el('button','','تلاش دوباره');retry.type='button';retry.onclick=loadMore;initial.append(retry)}
+    else message(err.message);
+  }finally{if(feedController===controller)feedController=null;loading=false}
 }
 loadMore();
 })();

@@ -1,0 +1,8 @@
+/* DELISA v1.27 — Explore GPU/memory polish. */
+/* Never blur posters of every off-screen reel in the stack. */
+.exp-post:not(.is-current) .exp-backdrop{filter:none!important;opacity:.36!important;transform:none!important}
+/* A restrained active blur keeps the dark editorial desktop surround at lower GPU cost. */
+.exp-post.is-current .exp-backdrop{filter:blur(13px) brightness(.48) saturate(.79)!important;opacity:.74!important}
+.exp-post:not(.is-current) .exp-video{opacity:0!important}
+@media(max-width:760px){.exp-post.is-current .exp-backdrop{filter:blur(9px) brightness(.45)!important}}
+@media(prefers-reduced-motion:reduce){.exp-post .exp-backdrop{filter:none!important}}
